@@ -1,15 +1,15 @@
-function customVideoIn(editor){
-editor.on("component:add", (model) => {
-  if (model.get("type") === "videoIn") {
-    // Ask number of pages when video block is added
-    askNumberOfPages();
-  }
-});
+function customVideoIn(editor) {
+  editor.on("component:add", (model) => {
+    if (model.get("type") === "videoIn") {
+      // Ask number of pages when video block is added
+      askNumberOfPages();
+    }
+  });
 
-// 🎯 Step 1: Show modal to ask for number of pages
-function askNumberOfPages() {
-  editor.Modal.setTitle("Enter Number of Pages");
-  editor.Modal.setContent(`
+  // 🎯 Step 1: Show modal to ask for number of pages
+  function askNumberOfPages() {
+    editor.Modal.setTitle("Enter Number of Pages");
+    editor.Modal.setContent(`
     <div>
       <label for="customPageCount">How many pages do you want?</label>
       <input type="number" id="customPageCount" class="form-control" min="1" placeholder="Enter a number" style="margin-top: 10px;" />
@@ -18,30 +18,30 @@ function askNumberOfPages() {
     </div>
   `);
 
-  editor.Modal.open();
+    editor.Modal.open();
 
-  // Confirm button handler
-  document
-    .getElementById("confirmPageCount")
-    .addEventListener("click", handlePageSelection);
-}
-
-// 🎨 Handle page selection and proceed to canvas size
-function handlePageSelection() {
-  const numPages = parseInt(document.getElementById("customPageCount").value);
-
-  if (isNaN(numPages) || numPages <= 0) {
-    alert("Please enter a valid number of pages.");
-    return;
+    // Confirm button handler
+    document
+      .getElementById("confirmPageCount")
+      .addEventListener("click", handlePageSelection);
   }
 
-  // Proceed to canvas size selection
-  askCanvasSize(numPages);
-}
+  // 🎨 Handle page selection and proceed to canvas size
+  function handlePageSelection() {
+    const numPages = parseInt(document.getElementById("customPageCount").value);
 
-function askCanvasSize(numPages) {
-  editor.Modal.setTitle("Select Canvas Size");
-  editor.Modal.setContent(`
+    if (isNaN(numPages) || numPages <= 0) {
+      alert("Please enter a valid number of pages.");
+      return;
+    }
+
+    // Proceed to canvas size selection
+    askCanvasSize(numPages);
+  }
+
+  function askCanvasSize(numPages) {
+    editor.Modal.setTitle("Select Canvas Size");
+    editor.Modal.setContent(`
     <div>
       <label for="canvasSizeSelect">Choose Canvas Size:</label>
       <select id="canvasSizeSelect" class="form-control">
@@ -62,223 +62,225 @@ function askCanvasSize(numPages) {
     </div>
   `);
 
-  editor.Modal.open();
+    editor.Modal.open();
 
-  // ✅ Bind events *after* modal is rendered
-  document
-    .getElementById("canvasSizeSelect")
-    .addEventListener("change", handleSizeChange);
+    // ✅ Bind events *after* modal is rendered
+    document
+      .getElementById("canvasSizeSelect")
+      .addEventListener("change", handleSizeChange);
 
-  document
-    .getElementById("confirmCanvasSize")
-    .addEventListener("click", () => handleCanvasSelection(numPages));
-}
-
-
-// 🎯 Handle size selection and custom input visibility
-function handleSizeChange() {
-  const selectedSize = document.getElementById("canvasSizeSelect").value;
-  const customInputs = document.getElementById("customSizeInputs");
-
-  if (selectedSize === "custom") {
-    customInputs.style.display = "block"; // Show inputs
-  } else {
-    customInputs.style.display = "none"; // Hide inputs
-  }
-}
-
-// 🎨 Handle canvas selection and create slides
-function handleCanvasSelection(numPages) {
-  const selectedSize = document.getElementById("canvasSizeSelect").value;
-  let width, height;
-
-  switch (selectedSize) {
-    case "A4":
-      width = "595px";
-      height = "840px";
-      break;
-    case "720p":
-      width = "1280px";
-      height = "720px";
-      break;
-    case "custom":
-      width = document.getElementById("customWidth").value;
-      height = document.getElementById("customHeight").value;
-      if (!isValidSize(width) || !isValidSize(height)) {
-        alert("Invalid custom size. Please enter valid dimensions.");
-        return;
-      }
-      break;
-    default:
-      alert("Invalid option. Using default A4 size.");
-      width = "595px";
-      height = "842px";
+    document
+      .getElementById("confirmCanvasSize")
+      .addEventListener("click", () => handleCanvasSelection(numPages));
   }
 
-  // Create slides with selected size
-  createSlides(numPages, width, height);
-  editor.Modal.close();
-}
+  // 🎯 Handle size selection and custom input visibility
+  function handleSizeChange() {
+    const selectedSize = document.getElementById("canvasSizeSelect").value;
+    const customInputs = document.getElementById("customSizeInputs");
 
-// 🎨 Validate custom size format
-function isValidSize(size) {
-  return size && size.match(/^\d+(px|%)$/);
-}
+    if (selectedSize === "custom") {
+      customInputs.style.display = "block"; // Show inputs
+    } else {
+      customInputs.style.display = "none"; // Hide inputs
+    }
+  }
 
+  // 🎨 Handle canvas selection and create slides
+  function handleCanvasSelection(numPages) {
+    const selectedSize = document.getElementById("canvasSizeSelect").value;
+    let width, height;
 
+    switch (selectedSize) {
+      case "A4":
+        width = "595px";
+        height = "840px";
+        break;
+      case "720p":
+        width = "1280px";
+        height = "720px";
+        break;
+      case "custom":
+        width = document.getElementById("customWidth").value;
+        height = document.getElementById("customHeight").value;
+        if (!isValidSize(width) || !isValidSize(height)) {
+          alert("Invalid custom size. Please enter valid dimensions.");
+          return;
+        }
+        break;
+      default:
+        alert("Invalid option. Using default A4 size.");
+        width = "595px";
+        height = "842px";
+    }
 
-let transitions = {};
-let clickStates = {}; 
-window.presentationState = {
-  currentSlideIndex: 1, // Current active slide index
-   slides: [],          // Stores slide components
-}
+    // Create slides with selected size
+    createSlides(numPages, width, height);
+    editor.Modal.close();
+  }
 
-let currentSlideIndex = window.presentationState.currentSlideIndex; // Keep track of active slide
-let slides = window.presentationState.slides;
+  // 🎨 Validate custom size format
+  function isValidSize(size) {
+    return size && size.match(/^\d+(px|%)$/);
+  }
 
-const activeStyle = document.createElement('style');
-activeStyle.innerHTML = `
+  let transitions = {};
+  let clickStates = {};
+  window.presentationState = {
+    currentSlideIndex: 1, // Current active slide index
+    slides: [], // Stores slide components
+  };
+
+  let currentSlideIndex = window.presentationState.currentSlideIndex; // Keep track of active slide
+  let slides = window.presentationState.slides;
+
+  const activeStyle = document.createElement("style");
+  activeStyle.innerHTML = `
   .thumbnail.active-thumbnail {
     transform: scale(1.2) !important;
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25) !important;
     border-color: #007bff;
   }
 `;
-document.head.appendChild(activeStyle);
+  document.head.appendChild(activeStyle);
 
+  // 🎨 Enhanced styling for slide thumbnails
+  function createSlides(numPages, width, height) {
+    window.presentationState.slides = slides;
+    const slidesContainer = document.createElement("div");
+    slidesContainer.id = "slides-thumbnails";
+    slidesContainer.style.position = "sticky";
+    slidesContainer.style.bottom = "0";
+    slidesContainer.style.left = "0";
+    slidesContainer.style.width = "82.9%";
+    slidesContainer.style.zIndex = "999";
+    slidesContainer.style.display = "flex";
+    slidesContainer.style.overflowX = "auto";
+    slidesContainer.style.background = "#f9f9f9";
+    slidesContainer.style.padding = "10px 15px";
+    slidesContainer.style.border = "1px solid #ccc";
+    slidesContainer.style.alignItems = "center";
 
-// 🎨 Enhanced styling for slide thumbnails
-function createSlides(numPages, width, height) {
-   window.presentationState.slides = slides;
-  const slidesContainer = document.createElement("div");
-  slidesContainer.id = "slides-thumbnails";
-  slidesContainer.style.position = "sticky";
-  slidesContainer.style.bottom = "0";
-  slidesContainer.style.left = "0";
-  slidesContainer.style.width = "82.9%";
-  slidesContainer.style.zIndex = "999";
-  slidesContainer.style.display = "flex";
-  slidesContainer.style.overflowX = "auto";
-  slidesContainer.style.background = "#f9f9f9";
-  slidesContainer.style.padding = "10px 15px";
-  slidesContainer.style.border = "1px solid #ccc";
-  slidesContainer.style.alignItems = "center";
+    function createDeleteButton(thumbnail, slideIndex) {
+      const deleteBtn = document.createElement("div");
+      deleteBtn.innerHTML = "&times;";
+      deleteBtn.style.position = "absolute";
+      deleteBtn.style.top = "1px";
+      deleteBtn.style.right = "4px";
+      deleteBtn.style.fontSize = "23px";
+      deleteBtn.style.color = "#000000";
+      // deleteBtn.style.background = "#2e0d7d";
+      deleteBtn.style.cursor = "pointer";
+      deleteBtn.style.zIndex = "10";
+      deleteBtn.title = "Delete Slide";
 
-  function createDeleteButton(thumbnail, slideIndex) {
-    const deleteBtn = document.createElement("div");
-    deleteBtn.innerHTML = "&times;";
-    deleteBtn.style.position = "absolute";
-    deleteBtn.style.top = "1px";
-    deleteBtn.style.right = "4px";
-    deleteBtn.style.fontSize = "23px";
-    deleteBtn.style.color = "#000000";
-   // deleteBtn.style.background = "#2e0d7d";
-    deleteBtn.style.cursor = "pointer";
-    deleteBtn.style.zIndex = "10";
-    deleteBtn.title = "Delete Slide";
+      deleteBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (!window.confirm("Are you sure you want to delete this slide?"))
+          return;
+        const index = parseInt(thumbnail.getAttribute("data-slide-index"));
 
-    deleteBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      if (!window.confirm("Are you sure you want to delete this slide?")) return;
-      const index = parseInt(thumbnail.getAttribute("data-slide-index"));
+        // Remove slide component and thumbnail
+        slides[index - 1].remove();
+        slides.splice(index - 1, 1);
+        thumbnail.remove();
 
-      // Remove slide component and thumbnail
-      slides[index - 1].remove();
-      slides.splice(index - 1, 1);
-      thumbnail.remove();
+        delete transitions[index];
+        delete clickStates[index];
 
-      delete transitions[index];
-      delete clickStates[index];
+        // Reindex slides, thumbnails, transitions, clickStates
+        const allThumbnails = slidesContainer.querySelectorAll(".thumbnail");
+        allThumbnails.forEach((thumb, idx) => {
+          const newIndex = idx + 1;
+          thumb.innerText = `Page ${newIndex}`;
+          thumb.setAttribute("data-slide-index", newIndex);
 
-      // Reindex slides, thumbnails, transitions, clickStates
-      const allThumbnails = slidesContainer.querySelectorAll(".thumbnail");
-      allThumbnails.forEach((thumb, idx) => {
-        const newIndex = idx + 1;
-        thumb.innerText = `Page ${newIndex}`;
-        thumb.setAttribute("data-slide-index", newIndex);
-      
-        // Remove old delete buttons if any
-        const oldDelete = thumb.querySelector("div");
-        if (oldDelete) oldDelete.remove();
-      
-        // Add fresh delete button
-        const newDeleteBtn = createDeleteButton(thumb, newIndex);
-        thumb.appendChild(newDeleteBtn);
-      
-        const slide = slides[idx];
-        slide.addAttributes({
-          "data-slide": newIndex
+          // Remove old delete buttons if any
+          const oldDelete = thumb.querySelector("div");
+          if (oldDelete) oldDelete.remove();
+
+          // Add fresh delete button
+          const newDeleteBtn = createDeleteButton(thumb, newIndex);
+          thumb.appendChild(newDeleteBtn);
+
+          const slide = slides[idx];
+          slide.addAttributes({
+            "data-slide": newIndex,
+          });
+          transitions[newIndex] = transitions[newIndex] || {
+            type: "none",
+            duration: 0,
+            direction: "none",
+          };
+          clickStates[newIndex] = clickStates[newIndex] || false;
         });
-        transitions[newIndex] = transitions[newIndex] || { type: "none", duration: 0, direction: "none" };
-        clickStates[newIndex] = clickStates[newIndex] || false;
+
+        // Clean up stale keys
+        const keys = Object.keys(transitions);
+        keys.forEach((key) => {
+          if (parseInt(key) > slides.length) delete transitions[key];
+        });
+
+        currentSlideIndex = Math.min(currentSlideIndex, slides.length);
+        window.presentationState.currentSlideIndex = currentSlideIndex;
+        switchSlide(currentSlideIndex);
       });
-      
-      // Clean up stale keys
-      const keys = Object.keys(transitions);
-      keys.forEach((key) => {
-        if (parseInt(key) > slides.length) delete transitions[key];
+
+      return deleteBtn;
+    }
+
+    for (let i = 1; i <= numPages; i++) {
+      let slide = editor.Components.addComponent({
+        tagName: "div",
+        attributes: {
+          "data-slide": i,
+          "data-transition-type": "none",
+          "data-transition-duration": "0",
+          "data-slide-timer": "0",
+          "data-transition-direction": "none",
+        },
+        content: ``,
+        style: {
+          width,
+          height,
+          border: "1px solid #ccc",
+          textAlign: "center",
+          lineHeight: height,
+          backgroundColor: "#f4f4f4",
+          display: i === 1 ? "block" : "none",
+          borderRadius: "8px",
+          boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+          transition: "transform 0.3s ease, box-shadow 0.3s ease",
+        },
       });
 
-      currentSlideIndex = Math.min(currentSlideIndex, slides.length);
-       window.presentationState.currentSlideIndex = currentSlideIndex;
-      switchSlide(currentSlideIndex);
-    });
+      transitions[i] = { type: "none", duration: 0, direction: "none" };
+      slides.push(slide);
 
-    return deleteBtn;
-  }
+      let thumbnail = document.createElement("div");
+      thumbnail.innerText = `Page ${i}`;
+      thumbnail.classList.add("thumbnail");
+      thumbnail.setAttribute("data-slide-index", i);
+      thumbnail.style.width = "80px";
+      thumbnail.style.height = "60px";
+      thumbnail.style.border = "1px solid #888";
+      thumbnail.style.cursor = "pointer";
+      thumbnail.style.display = "flex";
+      thumbnail.style.alignItems = "center";
+      thumbnail.style.justifyContent = "center";
+      thumbnail.style.position = "relative";
+      thumbnail.style.fontSize = "16px";
+      thumbnail.style.fontWeight = "bold";
+      thumbnail.style.color = "#333";
+      thumbnail.style.borderRadius = "6px";
+      thumbnail.style.marginRight = "10px";
+      thumbnail.style.boxShadow = "0 4px 8px rgba(0, 0, 0, 0.1)";
+      thumbnail.style.transition = "transform 0.3s ease, box-shadow 0.3s ease";
+      thumbnail.style.backgroundSize = "cover";
+      thumbnail.style.backgroundPosition = "center";
 
-  for (let i = 1; i <= numPages; i++) {
-    let slide = editor.Components.addComponent({
-      tagName: "div",
-      attributes: {
-        "data-slide": i,
-        "data-transition-type": "none",
-        "data-transition-duration": "0",
-        "data-transition-direction": "none",
-      },
-      content: ``,
-      style: {
-        width,
-        height,
-        border: "1px solid #ccc",
-        textAlign: "center",
-        lineHeight: height,
-        backgroundColor: "#f4f4f4",
-        display: i === 1 ? "block" : "none",
-        borderRadius: "8px",
-        boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-        transition: "transform 0.3s ease, box-shadow 0.3s ease",
-      },
-    });
-
-    transitions[i] = { type: "none", duration: 0, direction: "none" };
-    slides.push(slide);
-
-    let thumbnail = document.createElement("div");
-    thumbnail.innerText = `Page ${i}`;
-    thumbnail.classList.add("thumbnail");
-    thumbnail.setAttribute("data-slide-index", i);
-    thumbnail.style.width = "80px";
-    thumbnail.style.height = "60px";
-    thumbnail.style.border = "1px solid #888";
-    thumbnail.style.cursor = "pointer";
-    thumbnail.style.display = "flex";
-    thumbnail.style.alignItems = "center";
-    thumbnail.style.justifyContent = "center";
-    thumbnail.style.position = "relative";
-    thumbnail.style.fontSize = "16px";
-    thumbnail.style.fontWeight = "bold";
-    thumbnail.style.color = "#333";
-    thumbnail.style.borderRadius = "6px";
-    thumbnail.style.marginRight = "10px";
-    thumbnail.style.boxShadow = "0 4px 8px rgba(0, 0, 0, 0.1)";
-    thumbnail.style.transition = "transform 0.3s ease, box-shadow 0.3s ease";
-    thumbnail.style.backgroundSize = "cover";
-    thumbnail.style.backgroundPosition = "center";
-
-    const blurEffect = document.createElement('style');
-    blurEffect.innerHTML = `
+      const blurEffect = document.createElement("style");
+      blurEffect.innerHTML = `
       .thumbnail::before {
         content: '';
         position: absolute;
@@ -292,474 +294,686 @@ function createSlides(numPages, width, height) {
         z-index: -1;
       }
     `;
-    document.head.appendChild(blurEffect);
+      document.head.appendChild(blurEffect);
 
-    const deleteBtn = createDeleteButton(thumbnail, i);
-    thumbnail.appendChild(deleteBtn);
+      const deleteBtn = createDeleteButton(thumbnail, i);
+      thumbnail.appendChild(deleteBtn);
 
-    clickStates[i] = false;
+      clickStates[i] = false;
 
-    thumbnail.addEventListener("mouseenter", () => {
-      thumbnail.style.transform = "scale(1.1)";
-      thumbnail.style.boxShadow = "0 8px 16px rgba(0, 0, 0, 0.2)";
-    });
+      thumbnail.addEventListener("mouseenter", () => {
+        thumbnail.style.transform = "scale(1.1)";
+        thumbnail.style.boxShadow = "0 8px 16px rgba(0, 0, 0, 0.2)";
+      });
 
-    thumbnail.addEventListener("mouseleave", () => {
-      thumbnail.style.transform = "scale(1)";
-      thumbnail.style.boxShadow = "0 4px 8px rgba(0, 0, 0, 0.1)";
-    });
+      thumbnail.addEventListener("mouseleave", () => {
+        thumbnail.style.transform = "scale(1)";
+        thumbnail.style.boxShadow = "0 4px 8px rgba(0, 0, 0, 0.1)";
+      });
 
-    thumbnail.addEventListener("click", () => {
-      const index = parseInt(thumbnail.getAttribute("data-slide-index"));
-      if (currentSlideIndex === index) {
-        askTransitionSettings(index);
-      } else {
-        editor.Modal.close();
-        switchSlide(index);
+      thumbnail.addEventListener("click", () => {
+        const index = parseInt(thumbnail.getAttribute("data-slide-index"));
+        if (currentSlideIndex === index) {
+          askTransitionSettings(index);
+        } else {
+          editor.Modal.close();
+          switchSlide(index);
+        }
+        clickStates[index] = !clickStates[index];
+      });
+
+      if (i === 1) {
+        thumbnail.classList.add("active-thumbnail"); // ✅ Start with first thumbnail highlighted
       }
-      clickStates[index] = !clickStates[index];
-    });
 
-    if (i === 1) {
-      thumbnail.classList.add("active-thumbnail"); // ✅ Start with first thumbnail highlighted
+      slidesContainer.appendChild(thumbnail);
     }
 
-    slidesContainer.appendChild(thumbnail);
+    // ➕ Add "+" button to add a new slide
+    let addSlideBtn = document.createElement("div");
+    addSlideBtn.innerText = "+";
+    addSlideBtn.style.width = "60px";
+    addSlideBtn.style.height = "60px";
+    addSlideBtn.style.display = "flex";
+    addSlideBtn.style.alignItems = "center";
+    addSlideBtn.style.justifyContent = "center";
+    addSlideBtn.style.fontSize = "32px";
+    addSlideBtn.style.color = "#007bff";
+    addSlideBtn.style.border = "2px dashed #007bff";
+    addSlideBtn.style.borderRadius = "8px";
+    addSlideBtn.style.cursor = "pointer";
+    addSlideBtn.style.transition = "transform 0.3s ease, box-shadow 0.3s ease";
+    addSlideBtn.title = "Add New Slide";
+
+    addSlideBtn.addEventListener("mouseenter", () => {
+      addSlideBtn.style.transform = "scale(1.1)";
+    });
+    addSlideBtn.addEventListener("mouseleave", () => {
+      addSlideBtn.style.transform = "scale(1)";
+    });
+
+    addSlideBtn.addEventListener("click", () => {
+      const newIndex = slides.length + 1;
+      const slide = editor.Components.addComponent({
+        tagName: "div",
+        attributes: {
+          "data-slide": newIndex,
+          "data-transition-type": "none",
+          "data-transition-duration": "0",
+          "data-transition-direction": "none",
+        },
+        content: ``,
+        style: {
+          width,
+          height,
+          border: "1px solid #ccc",
+          textAlign: "center",
+          lineHeight: height,
+          backgroundColor: "#f4f4f4",
+          display: "none",
+          borderRadius: "8px",
+          boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+          transition: "transform 0.3s ease, box-shadow 0.3s ease",
+        },
+      });
+
+      transitions[newIndex] = { type: "none", duration: 0, direction: "none" };
+      slides.push(slide);
+
+      let thumbnail = document.createElement("div");
+      thumbnail.innerText = `Page ${newIndex}`;
+      thumbnail.classList.add("thumbnail");
+      thumbnail.setAttribute("data-slide-index", newIndex);
+      thumbnail.style.width = "80px";
+      thumbnail.style.height = "60px";
+      thumbnail.style.border = "1px solid #888";
+      thumbnail.style.cursor = "pointer";
+      thumbnail.style.display = "flex";
+      thumbnail.style.alignItems = "center";
+      thumbnail.style.justifyContent = "center";
+      thumbnail.style.position = "relative";
+      thumbnail.style.fontSize = "16px";
+      thumbnail.style.fontWeight = "bold";
+      thumbnail.style.color = "#333";
+      thumbnail.style.borderRadius = "6px";
+      thumbnail.style.marginRight = "10px";
+      thumbnail.style.boxShadow = "0 4px 8px rgba(0, 0, 0, 0.1)";
+      thumbnail.style.transition = "transform 0.3s ease, box-shadow 0.3s ease";
+      thumbnail.style.backgroundSize = "cover";
+      thumbnail.style.backgroundPosition = "center";
+
+      const deleteBtn = createDeleteButton(thumbnail, newIndex);
+      thumbnail.appendChild(deleteBtn);
+
+      clickStates[newIndex] = false;
+
+      thumbnail.addEventListener("mouseenter", () => {
+        thumbnail.style.transform = "scale(1.1)";
+        thumbnail.style.boxShadow = "0 8px 16px rgba(0, 0, 0, 0.2)";
+      });
+
+      thumbnail.addEventListener("mouseleave", () => {
+        thumbnail.style.transform = "scale(1)";
+        thumbnail.style.boxShadow = "0 4px 8px rgba(0, 0, 0, 0.1)";
+      });
+
+      thumbnail.addEventListener("click", () => {
+        if (!clickStates[newIndex]) {
+          switchSlide(newIndex);
+        } else {
+          askTransitionSettings(newIndex);
+        }
+        clickStates[newIndex] = !clickStates[newIndex];
+      });
+
+      slidesContainer.insertBefore(thumbnail, addSlideBtn);
+    });
+
+    slidesContainer.appendChild(addSlideBtn);
+    document.body.appendChild(slidesContainer);
+
+    // ✅ Modify iframe styling
+    const iframe = document.querySelector("iframe.i_designer-frame");
+    if (iframe) {
+      iframe.style.height = "89.16%";
+      iframe.style.margin = "0";
+    }
+    document.body.style.overflow = "hidden";
+
+    // Only show the download button if a "videoIn" component is added
+    const videoInComponent = editor
+      .getWrapper()
+      .find('[data-i_designer-type="videoIn"]');
+    if (videoInComponent.length > 0) {
+      const downloadBtn = document.createElement("button");
+      downloadBtn.textContent = "Download";
+      downloadBtn.className = "btn btn-success";
+      downloadBtn.style.marginLeft = "65px";
+      downloadBtn.style.padding = "12px 24px";
+      downloadBtn.style.fontSize = "16px";
+      downloadBtn.style.borderRadius = "8px";
+      downloadBtn.style.backgroundColor = "#28a745";
+      downloadBtn.style.color = "#fff";
+      downloadBtn.style.border = "none";
+      downloadBtn.style.cursor = "pointer";
+      downloadBtn.style.transition =
+        "background-color 0.3s ease, transform 0.3s ease"; // Smooth hover effect
+      downloadBtn.onclick = () => {
+        generateInteractiveSlideshowHTML();
+      };
+
+      // Add hover effect to the download button
+      downloadBtn.addEventListener("mouseenter", () => {
+        downloadBtn.style.backgroundColor = "#218838";
+        downloadBtn.style.transform = "scale(1.05)";
+      });
+
+      downloadBtn.addEventListener("mouseleave", () => {
+        downloadBtn.style.backgroundColor = "#28a745";
+        downloadBtn.style.transform = "scale(1)";
+      });
+
+      slidesContainer.appendChild(downloadBtn); // 👉 Append right next to slides
+    }
   }
 
-  // ➕ Add "+" button to add a new slide
-  let addSlideBtn = document.createElement("div");
-  addSlideBtn.innerText = "+";
-  addSlideBtn.style.width = "60px";
-  addSlideBtn.style.height = "60px";
-  addSlideBtn.style.display = "flex";
-  addSlideBtn.style.alignItems = "center";
-  addSlideBtn.style.justifyContent = "center";
-  addSlideBtn.style.fontSize = "32px";
-  addSlideBtn.style.color = "#007bff";
-  addSlideBtn.style.border = "2px dashed #007bff";
-  addSlideBtn.style.borderRadius = "8px";
-  addSlideBtn.style.cursor = "pointer";
-  addSlideBtn.style.transition = "transform 0.3s ease, box-shadow 0.3s ease";
-  addSlideBtn.title = "Add New Slide";
-
-  addSlideBtn.addEventListener("mouseenter", () => {
-    addSlideBtn.style.transform = "scale(1.1)";
-  });
-  addSlideBtn.addEventListener("mouseleave", () => {
-    addSlideBtn.style.transform = "scale(1)";
-  });
-
-  addSlideBtn.addEventListener("click", () => {
-    const newIndex = slides.length + 1;
-    const slide = editor.Components.addComponent({
-      tagName: "div",
-      attributes: {
-        "data-slide": newIndex,
-        "data-transition-type": "none",
-        "data-transition-duration": "0",
-        "data-transition-direction": "none",
-      },
-      content: ``,
-      style: {
-        width,
-        height,
-        border: "1px solid #ccc",
-        textAlign: "center",
-        lineHeight: height,
-        backgroundColor: "#f4f4f4",
-        display: "none",
-        borderRadius: "8px",
-        boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-        transition: "transform 0.3s ease, box-shadow 0.3s ease",
-      },
+  function switchSlide(index) {
+    slides.forEach((slide, i) => {
+      let el = slide.getEl();
+      if (el) el.style.display = i + 1 === index ? "block" : "none";
     });
 
-    transitions[newIndex] = { type: "none", duration: 0, direction: "none" };
-    slides.push(slide);
+    currentSlideIndex = index;
+    window.presentationState.currentSlideIndex = currentSlideIndex;
 
-    let thumbnail = document.createElement("div");
-    thumbnail.innerText = `Page ${newIndex}`;
-    thumbnail.classList.add("thumbnail");
-    thumbnail.setAttribute("data-slide-index", newIndex);
-    thumbnail.style.width = "80px";
-    thumbnail.style.height = "60px";
-    thumbnail.style.border = "1px solid #888";
-    thumbnail.style.cursor = "pointer";
-    thumbnail.style.display = "flex";
-    thumbnail.style.alignItems = "center";
-    thumbnail.style.justifyContent = "center";
-    thumbnail.style.position = "relative";
-    thumbnail.style.fontSize = "16px";
-    thumbnail.style.fontWeight = "bold";
-    thumbnail.style.color = "#333";
-    thumbnail.style.borderRadius = "6px";
-    thumbnail.style.marginRight = "10px";
-    thumbnail.style.boxShadow = "0 4px 8px rgba(0, 0, 0, 0.1)";
-    thumbnail.style.transition = "transform 0.3s ease, box-shadow 0.3s ease";
-    thumbnail.style.backgroundSize = "cover";
-    thumbnail.style.backgroundPosition = "center";
+    // Automatically select the active slide so new components go into it
+    const selectedSlide = slides[index - 1];
+    if (selectedSlide) {
+      editor.select(selectedSlide);
+    }
 
-    const deleteBtn = createDeleteButton(thumbnail, newIndex);
-    thumbnail.appendChild(deleteBtn);
-
-    clickStates[newIndex] = false;
-
-    thumbnail.addEventListener("mouseenter", () => {
-      thumbnail.style.transform = "scale(1.1)";
-      thumbnail.style.boxShadow = "0 8px 16px rgba(0, 0, 0, 0.2)";
+    // ✅ Highlight the current thumbnail
+    const allThumbnails = document.querySelectorAll(".thumbnail");
+    allThumbnails.forEach((thumb) => {
+      const idx = parseInt(thumb.getAttribute("data-slide-index"));
+      thumb.classList.toggle("active-thumbnail", idx === index);
     });
+  }
 
-    thumbnail.addEventListener("mouseleave", () => {
-      thumbnail.style.transform = "scale(1)";
-      thumbnail.style.boxShadow = "0 4px 8px rgba(0, 0, 0, 0.1)";
+  // Global variable to store current video duration
+  let currentVideoDuration = 0;
+
+  // Function to extract YouTube video ID from URL
+  function extractYouTubeVideoId(url) {
+    const regExp =
+      /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return match && match[2].length === 11 ? match[2] : null;
+  }
+
+  // // Function to get YouTube video duration using YouTube API
+  // async function getYouTubeVideoDuration(videoId) {
+  //   try {
+  //     // You'll need to replace 'YOUR_YOUTUBE_API_KEY' with your actual YouTube API key
+  //     const apiKey = 'AIzaSyDCKDh8OWxeJGsO7dp6A8yRrj_VTYqp8ig';
+  //     const response = await fetch(`https://www.googleapis.com/youtube/v3/videos?id=${videoId}&key=${apiKey}&part=contentDetails`);
+  //     const data = await response.json();
+
+  //     if (data.items && data.items.length > 0) {
+  //       const duration = data.items[0].contentDetails.duration;
+  //       return convertISO8601ToSeconds(duration);
+  //     }
+  //     return 0;
+  //   } catch (error) {
+  //     console.error('Error fetching YouTube video duration:', error);
+  //     return 0;
+  //   }
+  // }
+
+  // // Function to convert ISO 8601 duration format to seconds
+  // function convertISO8601ToSeconds(duration) {
+  //   const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
+  //   const hours = (parseInt(match[1]) || 0);
+  //   const minutes = (parseInt(match[2]) || 0);
+  //   const seconds = (parseInt(match[3]) || 0);
+  //   return hours * 3600 + minutes * 60 + seconds;
+  // }
+
+  // Function to load YouTube Iframe Player API (only once)
+  function loadYouTubeIframeAPI() {
+    return new Promise((resolve) => {
+      if (window.YT && window.YT.Player) return resolve();
+
+      const tag = document.createElement("script");
+      tag.src = "https://www.youtube.com/iframe_api";
+      const firstScriptTag = document.getElementsByTagName("script")[0];
+      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+      window.onYouTubeIframeAPIReady = () => resolve();
     });
+  }
 
-    thumbnail.addEventListener("click", () => {
-      if (!clickStates[newIndex]) {
-        switchSlide(newIndex);
-      } else {
-        askTransitionSettings(newIndex);
+  // Function to get video duration using Iframe Player API
+  async function getYouTubeDurationUsingIframe(videoId) {
+    return new Promise(async (resolve) => {
+      await loadYouTubeIframeAPI();
+
+      const tempDivId = `yt-temp-player-${Date.now()}`;
+      const tempDiv = document.createElement("div");
+      tempDiv.id = tempDivId;
+      tempDiv.style.position = "absolute";
+      tempDiv.style.left = "-9999px";
+      document.body.appendChild(tempDiv);
+
+      let timeoutId;
+
+      const player = new YT.Player(tempDivId, {
+        videoId,
+        events: {
+          onReady: function () {
+            clearTimeout(timeoutId);
+            const duration = player.getDuration();
+            resolve(duration || 0);
+            player.destroy();
+            tempDiv.remove();
+          },
+          onError: function () {
+            clearTimeout(timeoutId);
+            console.warn("YT Iframe Player error");
+            resolve(0);
+            player.destroy();
+            tempDiv.remove();
+          },
+        },
+      });
+
+      timeoutId = setTimeout(() => {
+        console.warn("YT Iframe Player timeout");
+        resolve(0);
+        player.destroy();
+        tempDiv.remove();
+      }, 5000);
+    });
+  }
+
+  // Rewritten function using Iframe API instead of Data API
+  async function checkAndSetVideoDuration(slideIndex) {
+    currentVideoDuration = 0;
+    console.log("function checksetvideo");
+
+    const canvasFrame = editor.Canvas.getFrameEl();
+    const slideEl = canvasFrame.contentDocument.querySelector(
+      `[data-slide="${slideIndex}"]`
+    );
+    console.log("DOM element of slide", slideIndex, ":", slideEl);
+    console.log("Outer HTML:", slideEl?.outerHTML);
+
+    if (!slideEl) return;
+
+    const youtubeIframe = slideEl.querySelector(
+      'iframe[src*="youtube.com/embed"], iframe[src*="youtu.be"]'
+    );
+    console.log("YT 1st step", youtubeIframe);
+
+    if (youtubeIframe) {
+      let src = youtubeIframe.src;
+
+      // ✅ Ensure enablejsapi=1 is present
+      if (!src.includes("enablejsapi=1")) {
+        const hasQuery = src.includes("?");
+        src += hasQuery ? "&enablejsapi=1" : "?enablejsapi=1";
+        youtubeIframe.src = src;
       }
-      clickStates[newIndex] = !clickStates[newIndex];
+
+      const videoId = extractYouTubeVideoId(src);
+      console.log("YT 2nd step", videoId);
+
+      if (videoId) {
+        console.log("YT 2nd step555", videoId);
+        currentVideoDuration = await getYouTubeDurationUsingIframe(videoId); // ← using videoId, not iframe
+        console.log("YT 3rd step (duration)", currentVideoDuration);
+
+        if (currentVideoDuration > 0) {
+          if (!transitions[slideIndex]) {
+            transitions[slideIndex] = {
+              type: "none",
+              duration: 0,
+              direction: "none",
+              slideTimer: 0,
+              isHidden: false,
+              wordToHide: "",
+            };
+          }
+
+          transitions[slideIndex].slideTimer = currentVideoDuration;
+
+          let slide = slides[slideIndex - 1];
+          if (slide) {
+            slide.addAttributes({
+              "data-slide-timer": currentVideoDuration,
+            });
+          }
+        }
+      }
+    }
+  }
+
+  async function askTransitionSettings(slideIndex) {
+    // Check for YouTube video and set duration before opening modal
+    await checkAndSetVideoDuration(slideIndex);
+
+    const transition = transitions[slideIndex] || {
+      type: "none",
+      duration: 0,
+      direction: "none",
+      slideTimer: 0,
+      isHidden: false,
+      wordToHide: "",
+    };
+
+    // Initialize the modal content
+    editor.Modal.setTitle(`Transition for Slide ${slideIndex}`);
+    editor.Modal.setContent(`
+  <div>
+    <label for="transitionType">Transition Type:</label>
+    <select id="transitionType" class="form-control">
+      <option value="none" ${
+        transition.type === "none" ? "selected" : ""
+      }>None</option>
+      <option value="fade" ${
+        transition.type === "fade" ? "selected" : ""
+      }>Fade</option>
+      <option value="slide" ${
+        transition.type === "slide" ? "selected" : ""
+      }>Slide</option>
+      <option value="zoom" ${
+        transition.type === "zoom" ? "selected" : ""
+      }>Zoom</option>
+    </select>
+
+    <label for="transitionDuration" style="margin-top: 10px;">Transition Duration (seconds):</label>
+    <input type="number" id="transitionDuration" class="form-control" min="0" step="0.1" value="${
+      transition.duration || 0
+    }" /><br>
+
+    <label for="slideTimer" style="margin-top: 10px;">Slide Timer (seconds):</label>
+    <input type="number" id="slideTimer" class="form-control" min="0" step="0.1" value="${
+      transition.slideTimer || 0
+    }" />
+    ${
+      currentVideoDuration > 0
+        ? `<small style="color: #666; display: block; margin-top: 5px;">YouTube video duration: ${currentVideoDuration} seconds (minimum required)</small>`
+        : ""
+    }
+
+    <div id="directionField" style="display:${
+      transition.type === "slide" ? "block" : "none"
+    }; margin-top: 10px;">
+      <label for="transitionDirection">Direction:</label>
+      <select id="transitionDirection" class="form-control">
+        <option value="left" ${
+          transition.direction === "left" ? "selected" : ""
+        }>Left</option>
+        <option value="right" ${
+          transition.direction === "right" ? "selected" : ""
+        }>Right</option>
+        <option value="up" ${
+          transition.direction === "up" ? "selected" : ""
+        }>Up</option>
+        <option value="down" ${
+          transition.direction === "down" ? "selected" : ""
+        }>Down</option>
+      </select>
+    </div>
+
+    <label for="hideSlide" style="margin-top: 10px;">
+      <input type="checkbox" id="hideSlide" ${
+        transition.isHidden ? "checked" : ""
+      } />
+      Hide Slide in Downloaded Slideshow
+    </label>
+
+    <div id="wordToHideDiv" style="display:${
+      transition.isHidden ? "block" : "none"
+    }; margin-top: 10px;">
+      <label for="wordToHide">Enter word to hide this slide:</label>
+      <input type="text" id="wordToHide" class="form-control" value="${
+        transition.wordToHide || ""
+      }" />
+    </div>
+
+    <div id="validationMessage" style="color: red; margin-top: 10px; display: none;"></div>
+    <button id="saveTransition" class="btn btn-primary" style="margin-top: 15px;">Save</button>
+  </div>
+`);
+
+    // Show or hide the word input based on the checkbox state
+    document.getElementById("hideSlide").addEventListener("change", (e) => {
+      document.getElementById("wordToHideDiv").style.display = e.target.checked
+        ? "block"
+        : "none";
     });
 
-    slidesContainer.insertBefore(thumbnail, addSlideBtn);
-  });
+    // Update direction field visibility when transition type changes
+    document
+      .getElementById("transitionType")
+      .addEventListener("change", (e) => {
+        document.getElementById("directionField").style.display =
+          e.target.value === "slide" ? "block" : "none";
+      });
 
-  slidesContainer.appendChild(addSlideBtn);
-  document.body.appendChild(slidesContainer);
+    // Add validation for slide timer input
+    document
+      .getElementById("slideTimer")
+      .addEventListener("input", validateSlideTimer);
 
-  // ✅ Modify iframe styling
-const iframe = document.querySelector("iframe.i_designer-frame");
-if (iframe) {
-  iframe.style.height = "89.16%";
-  iframe.style.margin = "0";
-}
-document.body.style.overflow = "hidden";
+    // Save the transition settings when the save button is clicked
+    document
+      .getElementById("saveTransition")
+      .addEventListener("click", () => saveTransition(slideIndex));
 
+    editor.Modal.open();
+  }
 
-  // Only show the download button if a "videoIn" component is added
-  const videoInComponent = editor.getWrapper().find('[data-i_designer-type="videoIn"]');
-  if (videoInComponent.length > 0) {
+  // Function to validate slide timer against video duration
+  function validateSlideTimer() {
+    const slideTimerInput = document.getElementById("slideTimer");
+    const saveButton = document.getElementById("saveTransition");
+    const validationMessage = document.getElementById("validationMessage");
+
+    const slideTimerValue = parseFloat(slideTimerInput.value);
+
+    if (currentVideoDuration > 0 && slideTimerValue < currentVideoDuration) {
+      validationMessage.textContent = `Slide timer must be at least ${currentVideoDuration} seconds (YouTube video duration)`;
+      validationMessage.style.display = "block";
+      saveButton.disabled = true;
+      saveButton.style.opacity = "0.5";
+      return false;
+    } else {
+      validationMessage.style.display = "none";
+      saveButton.disabled = false;
+      saveButton.style.opacity = "1";
+      return true;
+    }
+  }
+
+  function saveTransition(slideIndex) {
+    // Validate before saving
+    if (!validateSlideTimer()) {
+      return; // Don't save if validation fails
+    }
+
+    const type = document.getElementById("transitionType").value;
+    let duration = parseFloat(
+      document.getElementById("transitionDuration").value
+    );
+    let slideTimer = parseFloat(document.getElementById("slideTimer").value);
+    const direction =
+      type === "slide"
+        ? document.getElementById("transitionDirection").value
+        : "none";
+    const isHidden = document.getElementById("hideSlide").checked;
+    const wordToHide = document.getElementById("wordToHide").value.trim(); // Trim any extra spaces
+
+    // If transitionDuration or slideTimer are invalid, set them to 0
+    if (isNaN(duration)) duration = 0;
+    if (isNaN(slideTimer)) slideTimer = 0;
+
+    // Store transition data
+    transitions[slideIndex] = {
+      type,
+      duration,
+      direction,
+      slideTimer,
+      isHidden,
+      wordToHide: wordToHide || "",
+    };
+
+    let slide = slides[slideIndex - 1];
+    if (slide) {
+      slide.addAttributes({
+        "data-transition-type": type,
+        "data-transition-duration": duration,
+        "data-transition-direction": direction,
+        "data-slide-timer": slideTimer,
+        "data-hide": isHidden ? "true" : "false", // Store the hide flag
+        "data-word-to-hide": wordToHide || "", // Store the word to hide the slide (empty string if no word)
+      });
+    }
+
+    editor.Modal.close();
+    switchSlide(currentSlideIndex); // Ensure the current slide is still displayed after saving
+  }
+
+  function showDownloadButton() {
+    const footer = document.createElement("div");
+    footer.style.textAlign = "center";
+    footer.style.marginTop = "20px";
+
     const downloadBtn = document.createElement("button");
     downloadBtn.textContent = "Download";
     downloadBtn.className = "btn btn-success";
-    downloadBtn.style.marginLeft = "65px";
-    downloadBtn.style.padding = "12px 24px";
-    downloadBtn.style.fontSize = "16px";
-    downloadBtn.style.borderRadius = "8px";
-    downloadBtn.style.backgroundColor = "#28a745";
-    downloadBtn.style.color = "#fff";
-    downloadBtn.style.border = "none";
-    downloadBtn.style.cursor = "pointer";
-    downloadBtn.style.transition = "background-color 0.3s ease, transform 0.3s ease"; // Smooth hover effect
+    downloadBtn.style.margin = "10px";
     downloadBtn.onclick = () => {
       generateInteractiveSlideshowHTML();
     };
 
-    // Add hover effect to the download button
-    downloadBtn.addEventListener("mouseenter", () => {
-      downloadBtn.style.backgroundColor = "#218838";
-      downloadBtn.style.transform = "scale(1.05)";
-    });
-
-    downloadBtn.addEventListener("mouseleave", () => {
-      downloadBtn.style.backgroundColor = "#28a745";
-      downloadBtn.style.transform = "scale(1)";
-    });
-
-    slidesContainer.appendChild(downloadBtn); // 👉 Append right next to slides
-  }
-}
-
-
-function switchSlide(index) {
-  slides.forEach((slide, i) => {
-    let el = slide.getEl();
-    if (el) el.style.display = i + 1 === index ? "block" : "none";
-  });
-
-  currentSlideIndex = index;
-  window.presentationState.currentSlideIndex = currentSlideIndex;
-
-  // Automatically select the active slide so new components go into it
-  const selectedSlide = slides[index - 1];
-  if (selectedSlide) {
-    editor.select(selectedSlide);
+    footer.appendChild(downloadBtn);
+    document.body.appendChild(footer);
   }
 
-  // ✅ Highlight the current thumbnail
-  const allThumbnails = document.querySelectorAll(".thumbnail");
-  allThumbnails.forEach((thumb) => {
-    const idx = parseInt(thumb.getAttribute("data-slide-index"));
-    thumb.classList.toggle("active-thumbnail", idx === index);
-  });
-}
+  async function generateInteractiveSlideshowHTML() {
+    const iframe = document.querySelector("#editor iframe");
+    const iframeDoc =
+      iframe?.contentDocument || iframe?.contentWindow?.document;
+    const slideElements = iframeDoc?.querySelectorAll("[data-slide]");
 
-function askTransitionSettings(slideIndex) {
-  const transition = transitions[slideIndex] || {
-    type: "none",
-    duration: 0,
-    direction: "none",
-    slideTimer: 0,
-    isHidden: false,
-    wordToHide: ""
-  };
-
-  // Initialize the modal content
-  editor.Modal.setTitle(`Transition for Slide ${slideIndex}`);
-  editor.Modal.setContent(`
-    <div>
-      <label for="transitionType">Transition Type:</label>
-      <select id="transitionType" class="form-control">
-        <option value="none" ${transition.type === "none" ? "selected" : ""}>None</option>
-        <option value="fade" ${transition.type === "fade" ? "selected" : ""}>Fade</option>
-        <option value="slide" ${transition.type === "slide" ? "selected" : ""}>Slide</option>
-        <option value="zoom" ${transition.type === "zoom" ? "selected" : ""}>Zoom</option>
-      </select>
-
-      <label for="transitionDuration" style="margin-top: 10px;">Transition Duration (seconds):</label>
-      <input type="number" id="transitionDuration" class="form-control" min="0" step="0.1" value="${transition.duration || 0}" /><br>
-
-      <label for="slideTimer" style="margin-top: 10px;">Slide Timer (seconds):</label>
-      <input type="number" id="slideTimer" class="form-control" min="0" step="0.1" value="${transition.slideTimer || 0}" />
-
-      <div id="directionField" style="display:${transition.type === "slide" ? "block" : "none"}; margin-top: 10px;">
-        <label for="transitionDirection">Direction:</label>
-        <select id="transitionDirection" class="form-control">
-          <option value="left" ${transition.direction === "left" ? "selected" : ""}>Left</option>
-          <option value="right" ${transition.direction === "right" ? "selected" : ""}>Right</option>
-          <option value="up" ${transition.direction === "up" ? "selected" : ""}>Up</option>
-          <option value="down" ${transition.direction === "down" ? "selected" : ""}>Down</option>
-        </select>
-      </div>
-
-      <label for="hideSlide" style="margin-top: 10px;">
-        <input type="checkbox" id="hideSlide" ${transition.isHidden ? "checked" : ""} />
-        Hide Slide in Downloaded Slideshow
-      </label>
-
-      <div id="wordToHideDiv" style="display:${transition.isHidden ? "block" : "none"}; margin-top: 10px;">
-        <label for="wordToHide">Enter word to hide this slide:</label>
-        <input type="text" id="wordToHide" class="form-control" value="${transition.wordToHide || ""}" />
-      </div>
-
-      <button id="saveTransition" class="btn btn-primary" style="margin-top: 15px;">Save</button>
-    </div>
-  `);
-
-  // Hide/show input for word-to-hide
-  document.getElementById("hideSlide").addEventListener("change", (e) => {
-    document.getElementById("wordToHideDiv").style.display = e.target.checked ? "block" : "none";
-  });
-
-  // Show/hide direction field for slide transition
-  document.getElementById("transitionType").addEventListener("change", (e) => {
-    document.getElementById("directionField").style.display = e.target.value === "slide" ? "block" : "none";
-  });
-
-  // YT Duration Sync
-  const slide = slides[slideIndex - 1];
-  const iframe = slide && slide.view && slide.view.el.querySelector("iframe[src*='youtube.com/embed']");
-
-  if (iframe) {
-    // Add enablejsapi if not already present
-    let src = iframe.getAttribute("src");
-    if (!src.includes("enablejsapi=1")) {
-      src += (src.includes("?") ? "&" : "?") + "enablejsapi=1";
-      iframe.setAttribute("src", src);
+    if (!slideElements?.length) {
+      alert("No slides found!");
+      return;
     }
 
-    // Wait until YT is loaded
-    function waitForYT() {
-      if (typeof YT === "undefined" || typeof YT.Player === "undefined") {
-        setTimeout(waitForYT, 100);
-        return;
+    const slideData = [];
+    const editorHtml = editor.getHtml();
+    const editorCss = editor.getCss();
+
+    const styles = (editor.canvas && editor.canvas.styles) || [];
+    const scripts = (editor.canvas && editor.canvas.scripts) || [];
+
+    for (let i = 0; i < slideElements.length; i++) {
+      const el = slideElements[i];
+      const slideIndex = i + 1;
+
+      slideElements.forEach(
+        (s, idx) => (s.style.display = idx === i ? "block" : "none")
+      );
+      await new Promise((r) => setTimeout(r, 800));
+
+      const computed = getComputedStyle(el);
+      const width = parseFloat(computed.width);
+      const height = parseFloat(computed.height);
+      const img = encodeURIComponent(el.innerHTML);
+      const transition =
+        parseFloat(el.getAttribute("data-transition-duration")) || 1;
+      const display = parseFloat(el.getAttribute("data-slide-timer")) || 5;
+      const type = el.getAttribute("data-transition-type") || "fade";
+      const dir = el.getAttribute("data-transition-direction") || "left";
+      const backgroundColor = computed.backgroundColor || "#fff";
+      const isHidden = el.getAttribute("data-hide") === "true";
+      const wordToHide = el.getAttribute("data-word-to-hide") || "";
+
+      if (isHidden && !wordToHide) {
+        continue;
       }
 
-      const player = new YT.Player(iframe, {
-        events: {
-          onReady: (event) => {
-            const videoDuration = event.target.getDuration();
-            const slideTimerInput = document.getElementById("slideTimer");
-            slideTimerInput.min = videoDuration;
-            if (parseFloat(slideTimerInput.value) < videoDuration) {
-              slideTimerInput.value = videoDuration;
+      if (isHidden && wordToHide) {
+        const jsonDataString = localStorage.getItem("common_json");
+        const jsonData = JSON.parse(jsonDataString || "{}");
+        const custom_language = localStorage.getItem("language") || "english";
+        const divs = el.querySelectorAll("div[id]");
+        let matchFound = false;
+
+        divs.forEach((div) => {
+          const divId = div.id;
+          const styleContent = editor.getCss();
+          const regex = new RegExp(
+            `#${divId}\\s*{[^}]*my-input-json:\\s*([^;]+);`,
+            "i"
+          );
+          const match = regex.exec(styleContent);
+
+          if (match) {
+            const jsonKey = match[1].trim();
+            const value = jsonData?.[custom_language]?.[jsonKey];
+            if (typeof value === "string" && value.includes(wordToHide)) {
+              matchFound = true;
             }
-            iframe.setAttribute("data-video-duration", videoDuration);
           }
+        });
+
+        if (matchFound) {
+          continue;
         }
+      }
+
+      slideData.push({
+        img,
+        width,
+        height,
+        transition,
+        display,
+        type,
+        dir,
+        backgroundColor,
       });
     }
 
-    waitForYT();
-  }
+    const totalDuration = slideData.reduce(
+      (acc, s) => acc + s.transition + s.display,
+      0
+    );
 
-  // Attach Save button handler
-  document.getElementById("saveTransition").addEventListener("click", () => saveTransition(slideIndex));
-
-  editor.Modal.open();
-}
-
-function saveTransition(slideIndex) {
-  const type = document.getElementById("transitionType").value;
-  let duration = parseFloat(document.getElementById("transitionDuration").value);
-  let slideTimer = parseFloat(document.getElementById("slideTimer").value);
-  const direction = type === "slide" ? document.getElementById("transitionDirection").value : "none";
-  const isHidden = document.getElementById("hideSlide").checked;
-  const wordToHide = document.getElementById("wordToHide").value.trim();
-
-  if (isNaN(duration)) duration = 0;
-  if (isNaN(slideTimer)) slideTimer = 0;
-
-  const slide = slides[slideIndex - 1];
-  const iframe = slide && slide.view && slide.view.el.querySelector("iframe[src*='youtube.com']");
-  if (iframe) {
-    const ytDuration = parseFloat(iframe.getAttribute("data-video-duration") || "0");
-    if (slideTimer < ytDuration) {
-      alert(`Slide timer must be at least ${ytDuration} seconds to match the YouTube video.`);
-      return;
-    }
-  }
-
-  transitions[slideIndex] = { type, duration, direction, slideTimer, isHidden, wordToHide: wordToHide || "" };
-
-  if (slide) {
-    slide.addAttributes({
-      "data-transition-type": type,
-      "data-transition-duration": duration,
-      "data-transition-direction": direction,
-      "data-slide-timer": slideTimer,
-      "data-hide": isHidden ? "true" : "false",
-      "data-word-to-hide": wordToHide || ""
-    });
-  }
-
-  editor.Modal.close();
-  switchSlide(currentSlideIndex);
-}
-
-
-function showDownloadButton() {
-  const footer = document.createElement("div");
-  footer.style.textAlign = "center";
-  footer.style.marginTop = "20px";
-
-  const downloadBtn = document.createElement("button");
-  downloadBtn.textContent = "Download";
-  downloadBtn.className = "btn btn-success";
-  downloadBtn.style.margin = "10px";
-  downloadBtn.onclick = () => {
-    generateInteractiveSlideshowHTML();
-  };
-
-  footer.appendChild(downloadBtn);
-  document.body.appendChild(footer);
-}
-
-
-async function generateInteractiveSlideshowHTML() { 
-  const iframe = document.querySelector('#editor iframe'); 
-  const iframeDoc = iframe?.contentDocument || iframe?.contentWindow?.document; 
-  const slideElements = iframeDoc?.querySelectorAll('[data-slide]'); 
-  
-  if (!slideElements?.length) { 
-    alert('No slides found!'); 
-    return; 
-  } 
-  
-  const slideData = []; 
-  const editorHtml = editor.getHtml(); 
-  const editorCss = editor.getCss(); 
-  
-  const styles = (editor.canvas && editor.canvas.styles) || []; 
-  const scripts = (editor.canvas && editor.canvas.scripts) || []; 
-  
-  for (let i = 0; i < slideElements.length; i++) { 
-    const el = slideElements[i]; 
-    const slideIndex = i + 1; 
-    
-    slideElements.forEach((s, idx) => s.style.display = idx === i ? 'block' : 'none'); 
-    await new Promise(r => setTimeout(r, 800)); 
-    
-    const computed = getComputedStyle(el); 
-    const width = parseFloat(computed.width); 
-    const height = parseFloat(computed.height); 
-    const img = encodeURIComponent(el.innerHTML); 
-    const transition = parseFloat(el.getAttribute("data-transition-duration")) || 1; 
-    const display = parseFloat(el.getAttribute("data-slide-timer")) || 5; 
-    const type = el.getAttribute("data-transition-type") || "fade"; 
-    const dir = el.getAttribute("data-transition-direction") || "left"; 
-    const backgroundColor = computed.backgroundColor || "#fff"; 
-    const isHidden = el.getAttribute("data-hide") === "true"; 
-    const wordToHide = el.getAttribute("data-word-to-hide") || ""; 
-    
-    if (isHidden && !wordToHide) { 
-      continue; 
-    } 
-    
-    if (isHidden && wordToHide) { 
-      const jsonDataString = localStorage.getItem("common_json"); 
-      const jsonData = JSON.parse(jsonDataString || "{}"); 
-      const custom_language = localStorage.getItem("language") || "english"; 
-      const divs = el.querySelectorAll("div[id]"); 
-      let matchFound = false; 
-      
-      divs.forEach((div) => { 
-        const divId = div.id; 
-        const styleContent = editor.getCss(); 
-        const regex = new RegExp(`#${divId}\\s*{[^}]*my-input-json:\\s*([^;]+);`, "i"); 
-        const match = regex.exec(styleContent); 
-        
-        if (match) { 
-          const jsonKey = match[1].trim(); 
-          const value = jsonData?.[custom_language]?.[jsonKey]; 
-          if (typeof value === "string" && value.includes(wordToHide)) { 
-            matchFound = true; 
-          } 
-        } 
-      }); 
-      
-      if (matchFound) { 
-        continue; 
-      } 
-    } 
-    
-    slideData.push({ 
-      img, 
-      width, 
-      height, 
-      transition, 
-      display, 
-      type, 
-      dir, 
-      backgroundColor 
-    }); 
-  } 
-  
-  const totalDuration = slideData.reduce((acc, s) => acc + s.transition + s.display, 0); 
-
-  // Check if the HTML content from the editor contains a table 
-  const containsTable = editorHtml.includes('<table'); 
-  const tableInitializationScript = containsTable ? 
-    `<script> 
+    // Check if the HTML content from the editor contains a table
+    const containsTable = editorHtml.includes("<table");
+    const tableInitializationScript = containsTable
+      ? `<script> 
       $(document).ready(function() { 
         $('table').DataTable({ 
           dom: 'Bfrtip', 
           buttons: ['copy', 'csv', 'excel', 'pdf', 'print'] 
         }); 
       }); 
-    </script>` : ''; 
-  
-  const headContent = [ 
-    `<style>${editorCss}</style>`, 
-    ...styles.map(url => `<link rel="stylesheet" href="${url}">`), 
-    ...scripts.map(url => `<script src="${url}"></script>`), 
-    tableInitializationScript // Add script only if a table exists 
-  ].join(''); 
-  
-  const fullHTML = `<!DOCTYPE html> 
+    </script>`
+      : "";
+
+    const headContent = [
+      `<style>${editorCss}</style>`,
+      ...styles.map((url) => `<link rel="stylesheet" href="${url}">`),
+      ...scripts.map((url) => `<script src="${url}"></script>`),
+      tableInitializationScript, // Add script only if a table exists
+    ].join("");
+
+    const fullHTML = `<!DOCTYPE html> 
 <html lang="en"> 
 <head> 
   <meta charset="UTF-8" /> 
@@ -1001,10 +1215,10 @@ async function generateInteractiveSlideshowHTML() {
     border-color: rgba(255,255,255,0.7);
   }
   
-.thumbnail.active {
-  border: 3px solid #ff3636;
-  box-shadow: 0 0 15px rgba(255, 50, 50, 0.5);
-}
+  .thumbnail.active {
+    border: 3px solid #ff3636;
+    box-shadow: 0 0 15px rgba(255, 50, 50, 0.5);
+  }
 
   .thumbnail-label {
     position: absolute;
@@ -1021,15 +1235,29 @@ async function generateInteractiveSlideshowHTML() {
   </style> 
 </head> 
 <body> 
-  ${slideData.map((s, i) => `<div class="slide" id="slide-${i}" style="width:${s.width}px;height:${s.height}px;background-color:${s.backgroundColor};"> 
-    ${decodeURIComponent(s.img)} 
-  </div>`).join('')} 
+  <div class="slide" id="slide-0" style="width:595px;height:840px;background-color:rgba(0, 0, 0, 0);"> 
+    <div id="is4a" data-i_designer-type="video" draggable="true" allowfullscreen="allowfullscreen" class="">
+      <iframe id="youtube-iframe" src="https://www.youtube.com/embed/BdURb_Pdt10?enablejsapi=1&origin=https://www.youtube.com" frameborder="0" allowfullscreen="true" class="i_designer-no-pointer" style="height: 100%; width: 100%;"></iframe>
+    </div> 
+  </div>
+  <div class="slide" id="slide-1" style="width:595px;height:840px;background-color:rgb(149, 62, 62);"> 
+     
+  </div>
+  <div class="slide" id="slide-2" style="width:595px;height:840px;background-color:rgba(0, 0, 0, 0);"> 
+     
+  </div>
   
   <!-- Thumbnail Navigation -->
   <div id="thumbnailContainer">
-    ${slideData.map((s, i) => `<div class="thumbnail" id="thumb-${i}" onclick="jumpToSlide(${i})">
-      <div class="thumbnail-label">Slide ${i+1}</div>
-    </div>`).join('')}
+    <div class="thumbnail" id="thumb-0" onclick="jumpToSlide(0)">
+      <div class="thumbnail-label">Slide 1</div>
+    </div>
+    <div class="thumbnail" id="thumb-1" onclick="jumpToSlide(1)">
+      <div class="thumbnail-label">Slide 2</div>
+    </div>
+    <div class="thumbnail" id="thumb-2" onclick="jumpToSlide(2)">
+      <div class="thumbnail-label">Slide 3</div>
+    </div>
   </div>
   
   <div class="controls"> 
@@ -1040,13 +1268,57 @@ async function generateInteractiveSlideshowHTML() {
   </div> 
   <div id="timeLabel">00:00 / 00:00</div> 
   
+  <script src="https://www.youtube.com/iframe_api"></script>
   <script> 
   const slides = [...document.querySelectorAll('.slide')]; 
   const thumbnails = [...document.querySelectorAll('.thumbnail')];
-  const slideData = ${JSON.stringify(slideData)}; 
-  const totalTime = ${totalDuration}; 
+  const slideData = [
+    {
+      "img": "%3Cdiv%20id%3D%22is4a%22%20data-i_designer-type%3D%22video%22%20draggable%3D%22true%22%20allowfullscreen%3D%22allowfullscreen%22%20class%3D%22%22%3E%3Ciframe%20src%3D%22https%3A%2F%2Fwww.youtube.com%2Fembed%2FBdURb_Pdt10%3Ffeature%3Dshared%26amp%3Benablejsapi%3D1%22%20frameborder%3D%220%22%20allowfullscreen%3D%22true%22%20class%3D%22i_designer-no-pointer%22%20style%3D%22height%3A%20100%25%3B%20width%3A%20100%25%3B%22%3E%3C%2Fiframe%3E%3C%2Fdiv%3E",
+      "width": 595,
+      "height": 840,
+      "transition": 1,
+      "display": 671,
+      "type": "none",
+      "dir": "none",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "hasVideo": true,
+      "videoId": "BdURb_Pdt10"
+    },
+    {
+      "img": "",
+      "width": 595,
+      "height": 840,
+      "transition": 1,
+      "display": 5,
+      "type": "none",
+      "dir": "none",
+      "backgroundColor": "rgb(149, 62, 62)",
+      "hasVideo": false
+    },
+    {
+      "img": "",
+      "width": 595,
+      "height": 840,
+      "transition": 1,
+      "display": 5,
+      "type": "none",
+      "dir": "none",
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "hasVideo": false
+    }
+  ];
+  const totalTime = 684; 
   const progressBar = document.getElementById("progressBar"); 
   const timeLabel = document.getElementById("timeLabel"); 
+  
+  // YouTube API variables
+  let youtubePlayer = null;
+  let videoReady = false;
+  let videoDuration = 0;
+  let videoCurrentTime = 0;
+  let isVideoSlide = false;
+  let videoUpdateInterval = null;
   
   // Add slide boundary markers 
   const progressContainer = document.getElementById("progressContainer"); 
@@ -1068,6 +1340,57 @@ async function generateInteractiveSlideshowHTML() {
   let last = null; 
   let rafId; 
   
+  // YouTube API Ready
+  function onYouTubeIframeAPIReady() {
+  if (window.YT && window.YT.Player) {
+    youtubePlayer = new YT.Player('youtube-iframe', {
+      events: {
+        'onReady': onPlayerReady,
+        'onStateChange': onPlayerStateChange
+      }
+    });
+  } else {
+    // Retry after a short delay if YT API isn't ready
+    setTimeout(onYouTubeIframeAPIReady, 100);
+  }
+}
+  
+  function onPlayerReady(event) {
+  videoReady = true;
+  try {
+    videoDuration = youtubePlayer.getDuration() || 0;
+    console.log('YouTube player ready, duration:', videoDuration);
+  } catch (e) {
+    console.log('Error getting video duration:', e);
+    videoDuration = 0;
+  }
+}
+  
+  function onPlayerStateChange(event) {
+    if (event.data === YT.PlayerState.PLAYING) {
+      startVideoTimeUpdate();
+    } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
+      stopVideoTimeUpdate();
+    }
+  }
+  
+  function startVideoTimeUpdate() {
+    if (videoUpdateInterval) clearInterval(videoUpdateInterval);
+    videoUpdateInterval = setInterval(() => {
+      if (youtubePlayer && videoReady && isVideoSlide) {
+        videoCurrentTime = youtubePlayer.getCurrentTime();
+        updateProgressUI();
+      }
+    }, 100);
+  }
+  
+  function stopVideoTimeUpdate() {
+    if (videoUpdateInterval) {
+      clearInterval(videoUpdateInterval);
+      videoUpdateInterval = null;
+    }
+  }
+  
   function format(t) { 
     const m = Math.floor(t / 60).toString().padStart(2, '0'); 
     const s = Math.floor(t % 60).toString().padStart(2, '0'); 
@@ -1075,9 +1398,17 @@ async function generateInteractiveSlideshowHTML() {
   } 
   
   function updateProgressUI() { 
-    const percent = (elapsed / totalTime) * 100; 
-    progressBar.style.width = percent + '%'; 
-    timeLabel.textContent = format(elapsed) + ' / ' + format(totalTime); 
+    if (isVideoSlide && videoReady && youtubePlayer) {
+      // Video slide - show video progress
+      const percent = (videoCurrentTime / videoDuration) * 100;
+      progressBar.style.width = percent + '%';
+      timeLabel.textContent = format(videoCurrentTime) + ' / ' + format(videoDuration);
+    } else {
+      // Regular slideshow progress
+      const percent = (elapsed / totalTime) * 100; 
+      progressBar.style.width = percent + '%'; 
+      timeLabel.textContent = format(elapsed) + ' / ' + format(totalTime); 
+    }
     
     // Update active thumbnail
     thumbnails.forEach((thumb, i) => {
@@ -1085,28 +1416,39 @@ async function generateInteractiveSlideshowHTML() {
     });
   } 
   
+
   function showSlide(index) { 
-    slides.forEach((s, i) => { 
-      s.style.display = i === index ? 'block' : 'none'; 
-      s.style.opacity = 0; 
-      if (i === index) { 
-        const { type, dir } = slideData[i]; 
-        if (type === 'zoom') { 
-          s.style.transform = 'translate(-50%, -50%) scale(0.8)'; 
-        } else if (type === 'slide') { 
-          let tx = 0, ty = 0, dist = 100; 
-          if (dir === 'left') tx = -dist; 
-          if (dir === 'right') tx = dist; 
-          if (dir === 'up') ty = -dist; 
-          if (dir === 'down') ty = dist; 
-          s.style.transform = \`translate(calc(-50% + \${tx}%), calc(-50% + \${ty}%))\`; 
-        } else { 
-          s.style.transform = 'translate(-50%, -50%)'; 
-        } 
+  slides.forEach((s, i) => { 
+    s.style.display = i === index ? 'block' : 'none'; 
+    s.style.opacity = 0; 
+    if (i === index) { 
+      const { type, dir } = slideData[i]; 
+      if (type === 'zoom') { 
+        s.style.transform = 'translate(-50%, -50%) scale(0.8)'; 
+      } else if (type === 'slide') { 
+        let tx = 0, ty = 0, dist = 100; 
+        if (dir === 'left') tx = -dist; 
+        if (dir === 'right') tx = dist; 
+        if (dir === 'up') ty = -dist; 
+        if (dir === 'down') ty = dist; 
+        s.style.transform = \`translate(calc(-50% + \${tx}%), calc(-50% + \${ty}%))\`; 
+      } else { 
+        s.style.transform = 'translate(-50%, -50%)'; 
       } 
-    }); 
-  } 
+    } 
+  }); 
   
+  // Check if current slide is a video slide
+  isVideoSlide = slideData[current]?.hasVideo || false;
+  
+  // Handle video slide
+  if (isVideoSlide && videoReady) {
+    startVideoTimeUpdate();
+  } else {
+    stopVideoTimeUpdate();
+  }
+}
+
   function renderTransition(progress) { 
     const slide = slides[current]; 
     const { type, dir } = slideData[current]; 
@@ -1127,22 +1469,27 @@ async function generateInteractiveSlideshowHTML() {
       slide.style.transform = \`translate(calc(-50% + \${tx}%), calc(-50% + \${ty}%))\`; 
     } 
   } 
+    
   
   function run(timestamp) { 
     if (!last) last = timestamp; 
     const delta = (timestamp - last) / 1000; 
     last = timestamp; 
-    remaining -= delta; 
-    elapsed += delta; 
-    updateProgressUI(); 
     
-    if (phase === 'transition') { 
+    // Don't update slideshow timing when on video slide
+    if (!isVideoSlide) {
+      remaining -= delta; 
+      elapsed += delta; 
+      updateProgressUI(); 
+    }
+    
+    if (phase === 'transition' && !isVideoSlide) { 
       const full = slideData[current].transition; 
       const progress = 1 - (remaining / full); 
       renderTransition(progress); 
     } 
     
-    if (remaining <= 0) { 
+    if (remaining <= 0 && !isVideoSlide) { 
       if (phase === 'transition') { 
         phase = 'display'; 
         remaining = slideData[current].display; 
@@ -1169,6 +1516,15 @@ async function generateInteractiveSlideshowHTML() {
     const playBtn = document.getElementById("playBtn");
     playBtn.innerHTML = playing ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
     
+    // Handle video controls
+    if (isVideoSlide && videoReady && youtubePlayer) {
+      if (playing) {
+        youtubePlayer.playVideo();
+      } else {
+        youtubePlayer.pauseVideo();
+      }
+    }
+    
     if (playing) { 
       last = null; 
       rafId = requestAnimationFrame(run); 
@@ -1179,8 +1535,18 @@ async function generateInteractiveSlideshowHTML() {
   
   function seek(e) { 
     const pct = e.offsetX / e.currentTarget.offsetWidth; 
-    const targetTime = pct * totalTime; 
-    jumpToTime(targetTime);
+    
+    if (isVideoSlide && videoReady && youtubePlayer) {
+      // Seek in video
+      const targetTime = pct * videoDuration;
+      youtubePlayer.seekTo(targetTime);
+      videoCurrentTime = targetTime;
+      updateProgressUI();
+    } else {
+      // Seek in slideshow
+      const targetTime = pct * totalTime; 
+      jumpToTime(targetTime);
+    }
   } 
   
   function jumpToSlide(slideIndex) {
@@ -1284,17 +1650,31 @@ async function generateInteractiveSlideshowHTML() {
     document.getElementById('timeLabel').classList.remove('visible');
     document.querySelector('.controls').classList.remove('visible');
   }
+  
+  // Initialize YouTube API if not already loaded
+  // Initialize YouTube API if not already loaded
+if (!window.YT || !window.YT.Player) {
+  window.onYouTubeIframeAPIReady = onYouTubeIframeAPIReady;
+  if (!document.querySelector('script[src*="youtube.com/iframe_api"]')) {
+    const tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    const firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+  }
+} else {
+  onYouTubeIframeAPIReady();
+}
   </script> 
 </body> 
-</html>`; 
+</html>`;
 
-  const blob = new Blob([fullHTML], { type: 'text/html' }); 
-  const url = URL.createObjectURL(blob); 
-  const a = document.createElement("a"); 
-  a.href = url; 
-  a.download = "interactive_slideshow.html"; 
-  document.body.appendChild(a); 
-  a.click(); 
-  document.body.removeChild(a); 
-}
+    const blob = new Blob([fullHTML], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "interactive_slideshow.html";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
 }
