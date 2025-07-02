@@ -1235,29 +1235,15 @@ function customVideoIn(editor) {
   </style> 
 </head> 
 <body> 
-  <div class="slide" id="slide-0" style="width:595px;height:840px;background-color:rgba(0, 0, 0, 0);"> 
-    <div id="is4a" data-i_designer-type="video" draggable="true" allowfullscreen="allowfullscreen" class="">
-      <iframe id="youtube-iframe" src="https://www.youtube.com/embed/BdURb_Pdt10?enablejsapi=1&origin=https://www.youtube.com" frameborder="0" allowfullscreen="true" class="i_designer-no-pointer" style="height: 100%; width: 100%;"></iframe>
-    </div> 
-  </div>
-  <div class="slide" id="slide-1" style="width:595px;height:840px;background-color:rgb(149, 62, 62);"> 
-     
-  </div>
-  <div class="slide" id="slide-2" style="width:595px;height:840px;background-color:rgba(0, 0, 0, 0);"> 
-     
-  </div>
+  ${slideData.map((s, i) => `<div class="slide" id="slide-${i}" style="width:${s.width}px;height:${s.height}px;background-color:${s.backgroundColor};"> 
+    ${decodeURIComponent(s.img)} 
+  </div>`).join('')} 
   
   <!-- Thumbnail Navigation -->
   <div id="thumbnailContainer">
-    <div class="thumbnail" id="thumb-0" onclick="jumpToSlide(0)">
-      <div class="thumbnail-label">Slide 1</div>
-    </div>
-    <div class="thumbnail" id="thumb-1" onclick="jumpToSlide(1)">
-      <div class="thumbnail-label">Slide 2</div>
-    </div>
-    <div class="thumbnail" id="thumb-2" onclick="jumpToSlide(2)">
-      <div class="thumbnail-label">Slide 3</div>
-    </div>
+    ${slideData.map((s, i) => `<div class="thumbnail" id="thumb-${i}" onclick="jumpToSlide(${i})">
+      <div class="thumbnail-label">Slide ${i+1}</div>
+    </div>`).join('')}
   </div>
   
   <div class="controls"> 
@@ -1314,6 +1300,7 @@ function customVideoIn(editor) {
   
   // YouTube API variables
   let youtubePlayer = null;
+  const youtubePlayers = {};
   let videoReady = false;
   let videoDuration = 0;
   let videoCurrentTime = 0;
@@ -1354,6 +1341,32 @@ function customVideoIn(editor) {
     setTimeout(onYouTubeIframeAPIReady, 100);
   }
 }
+  
+function initYouTubePlayers() {
+  slides.forEach((slide, index) => {
+    const iframe = slide.querySelector('iframe[src*="youtube.com"]');
+    if (iframe) {
+      const player = new YT.Player(`youtube-iframe-${index}`, {
+        events: {
+          onReady: (event) => {
+            console.log(`YouTube player ${index} ready`);
+          },
+          onStateChange: (event) => {
+            if (index === current) handleYTStateChange(event);
+          }
+        },
+        playerVars: {
+          controls: 0, // Hide YouTube controls
+          modestbranding: 1,
+          rel: 0,
+          showinfo: 0
+        }
+      });
+      youtubePlayers[index] = player;
+    }
+  });
+}
+
   
   function onPlayerReady(event) {
   videoReady = true;
@@ -1442,11 +1455,21 @@ function customVideoIn(editor) {
   isVideoSlide = slideData[current]?.hasVideo || false;
   
   // Handle video slide
-  if (isVideoSlide && videoReady) {
-    startVideoTimeUpdate();
-  } else {
-    stopVideoTimeUpdate();
+  if (isVideoSlide && youtubePlayers[index]) {
+  youtubePlayer = youtubePlayers[index];
+  videoReady = true;
+  try {
+    videoDuration = youtubePlayer.getDuration();
+    videoCurrentTime = youtubePlayer.getCurrentTime();
+  } catch (e) {
+    videoDuration = 0;
+    videoCurrentTime = 0;
   }
+  startVideoTimeUpdate();
+} else {
+  stopVideoTimeUpdate();
+}
+
 }
 
   function renderTransition(progress) { 
@@ -1599,19 +1622,52 @@ function customVideoIn(editor) {
     if (playing) rafId = requestAnimationFrame(run); 
   } 
   
-  window.onload = () => { 
-    showSlide(current); 
-    updateProgressUI(); 
-    if (playing) rafId = requestAnimationFrame(run); 
-    
-    // Set up idle timer for UI elements
-    setupIdleTimer();
-    
-    // Set specific background image for each thumbnail
-    thumbnails.forEach((thumb) => {
-      thumb.style.backgroundImage = "url('https://blogs.windows.com/wp-content/uploads/prod/sites/44/2022/09/photos-newicon.png')";
-    });
-  }; 
+  window.onload = () => {
+  showSlide(current);
+  updateProgressUI();
+  iframe.setAttribute('id', `youtube-iframe-${index}`);
+
+  if (playing) rafId = requestAnimationFrame(run);
+
+  setupIdleTimer();
+
+  // Loop through slides and setup YouTube players
+  slides.forEach((slide, index) => {
+    const iframe = slide.querySelector('iframe[src*="youtube.com"]');
+    if (iframe) {
+      // Set enablejsapi=1 and rel=0 in src if not present
+      let src = iframe.src;
+      if (!src.includes('enablejsapi=1')) {
+        const separator = src.includes('?') ? '&' : '?';
+        src += separator + "enablejsapi=1&rel=0";
+        iframe.src = src;
+      }
+
+      iframe.setAttribute('id', 'youtube-iframe-' + index);
+    }
+  });
+
+  // Load YouTube API
+if (!window.YT || !window.YT.Player) {
+  window.onYouTubeIframeAPIReady = () => initYouTubePlayers();
+  if (!document.querySelector('script[src*="youtube.com/iframe_api"]')) {
+    const tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    document.head.appendChild(tag);
+  }
+} else {
+  initYouTubePlayers();
+}
+
+
+  // Add thumbnail backgrounds
+  thumbnails.forEach((thumb) => {
+    thumb.style.backgroundImage = "url('https://blogs.windows.com/wp-content/uploads/prod/sites/44/2022/09/photos-newicon.png')";
+  });
+};
+
+
+  
   
   // Handle idle time for UI visibility
   let idleTimer = null;
