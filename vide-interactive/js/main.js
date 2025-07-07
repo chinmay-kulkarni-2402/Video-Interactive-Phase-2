@@ -36,7 +36,8 @@ const editor = InteractiveDesigner.init({
     "tooltip-component",
     "typed-component",
     "style-bg-component", 
-    "navbar-component",     
+    "navbar-component", 
+    grapesjsPluginLocalVideo,
   ],
   pluginsOpts: {
     "grapesjs-plugin-toolbox": {

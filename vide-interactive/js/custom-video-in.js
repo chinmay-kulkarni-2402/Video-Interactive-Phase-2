@@ -862,118 +862,127 @@ function customVideoIn(editor) {
     document.body.appendChild(footer);
   }
 
-  async function generateInteractiveSlideshowHTML() {
-    const iframe = document.querySelector("#editor iframe");
-    const iframeDoc =
-      iframe?.contentDocument || iframe?.contentWindow?.document;
-    const slideElements = iframeDoc?.querySelectorAll("[data-slide]");
-
-    if (!slideElements?.length) {
-      alert("No slides found!");
-      return;
-    }
-
-    const slideData = [];
-    const editorHtml = editor.getHtml();
-    const editorCss = editor.getCss();
-
-    const styles = (editor.canvas && editor.canvas.styles) || [];
-    const scripts = (editor.canvas && editor.canvas.scripts) || [];
-
-    for (let i = 0; i < slideElements.length; i++) {
-      const el = slideElements[i];
-      const slideIndex = i + 1;
-
-      slideElements.forEach(
-        (s, idx) => (s.style.display = idx === i ? "block" : "none")
-      );
-      await new Promise((r) => setTimeout(r, 800));
-
-      const computed = getComputedStyle(el);
-      const width = parseFloat(computed.width);
-      const height = parseFloat(computed.height);
-      const img = encodeURIComponent(el.innerHTML);
-      const transition =
-        parseFloat(el.getAttribute("data-transition-duration")) || 1;
-      const display = parseFloat(el.getAttribute("data-slide-timer")) || 5;
-      const type = el.getAttribute("data-transition-type") || "fade";
-      const dir = el.getAttribute("data-transition-direction") || "left";
-      const backgroundColor = computed.backgroundColor || "#fff";
-      const isHidden = el.getAttribute("data-hide") === "true";
-      const wordToHide = el.getAttribute("data-word-to-hide") || "";
-
-      if (isHidden && !wordToHide) {
-        continue;
-      }
-
-      if (isHidden && wordToHide) {
-        const jsonDataString = localStorage.getItem("common_json");
-        const jsonData = JSON.parse(jsonDataString || "{}");
-        const custom_language = localStorage.getItem("language") || "english";
-        const divs = el.querySelectorAll("div[id]");
-        let matchFound = false;
-
-        divs.forEach((div) => {
-          const divId = div.id;
-          const styleContent = editor.getCss();
-          const regex = new RegExp(
-            `#${divId}\\s*{[^}]*my-input-json:\\s*([^;]+);`,
-            "i"
-          );
-          const match = regex.exec(styleContent);
-
-          if (match) {
-            const jsonKey = match[1].trim();
-            const value = jsonData?.[custom_language]?.[jsonKey];
-            if (typeof value === "string" && value.includes(wordToHide)) {
-              matchFound = true;
-            }
-          }
-        });
-
-        if (matchFound) {
-          continue;
+async function generateInteractiveSlideshowHTML() { 
+  const iframe = document.querySelector('#editor iframe'); 
+  const iframeDoc = iframe?.contentDocument || iframe?.contentWindow?.document; 
+  const slideElements = iframeDoc?.querySelectorAll('[data-slide]'); 
+  
+  if (!slideElements?.length) { 
+    alert('No slides found!'); 
+    return; 
+  } 
+  
+  const slideData = []; 
+  const editorHtml = editor.getHtml(); 
+  const editorCss = editor.getCss(); 
+  
+  const styles = (editor.canvas && editor.canvas.styles) || []; 
+  const scripts = (editor.canvas && editor.canvas.scripts) || []; 
+  
+  for (let i = 0; i < slideElements.length; i++) { 
+    const el = slideElements[i]; 
+    const slideIndex = i + 1; 
+    
+    slideElements.forEach((s, idx) => s.style.display = idx === i ? 'block' : 'none'); 
+    await new Promise(r => setTimeout(r, 800)); 
+    
+    const computed = getComputedStyle(el); 
+    const width = parseFloat(computed.width); 
+    const height = parseFloat(computed.height); 
+    const img = encodeURIComponent(el.innerHTML); 
+    const transition = parseFloat(el.getAttribute("data-transition-duration")) || 1; 
+    const display = parseFloat(el.getAttribute("data-slide-timer")) || 5; 
+    const type = el.getAttribute("data-transition-type") || "fade"; 
+    const dir = el.getAttribute("data-transition-direction") || "left"; 
+    const backgroundColor = computed.backgroundColor || "#fff"; 
+    const isHidden = el.getAttribute("data-hide") === "true"; 
+    const wordToHide = el.getAttribute("data-word-to-hide") || ""; 
+    
+    // Check for YouTube video in this slide
+    const youtubeIframes = el.querySelectorAll('iframe[src*="youtube.com"], iframe[src*="youtu.be"]');
+    let youtubeVideoId = null;
+    let youtubeStartTime = 0;
+    
+    if (youtubeIframes.length > 0) {
+      const ytSrc = youtubeIframes[0].src;
+      const videoIdMatch = ytSrc.match(/(?:youtube\.com\/embed\/|youtu\.be\/)([a-zA-Z0-9_-]+)/);
+      if (videoIdMatch) {
+        youtubeVideoId = videoIdMatch[1];
+        // Extract start time if present (t parameter)
+        const startTimeMatch = ytSrc.match(/[?&]t=(\d+)/);
+        if (startTimeMatch) {
+          youtubeStartTime = parseInt(startTimeMatch[1]);
         }
       }
-
-      slideData.push({
-        img,
-        width,
-        height,
-        transition,
-        display,
-        type,
-        dir,
-        backgroundColor,
-      });
     }
+    
+    if (isHidden && !wordToHide) { 
+      continue; 
+    } 
+    
+    if (isHidden && wordToHide) { 
+      const jsonDataString = localStorage.getItem("common_json"); 
+      const jsonData = JSON.parse(jsonDataString || "{}"); 
+      const custom_language = localStorage.getItem("language") || "english"; 
+      const divs = el.querySelectorAll("div[id]"); 
+      let matchFound = false; 
+      
+      divs.forEach((div) => { 
+        const divId = div.id; 
+        const styleContent = editor.getCss(); 
+        const regex = new RegExp(`#${divId}\\s*{[^}]*my-input-json:\\s*([^;]+);`, "i"); 
+        const match = regex.exec(styleContent); 
+        
+        if (match) { 
+          const jsonKey = match[1].trim(); 
+          const value = jsonData?.[custom_language]?.[jsonKey]; 
+          if (typeof value === "string" && value.includes(wordToHide)) { 
+            matchFound = true; 
+          } 
+        } 
+      }); 
+      
+      if (matchFound) { 
+        continue; 
+      } 
+    } 
+    
+    slideData.push({ 
+      img, 
+      width, 
+      height, 
+      transition, 
+      display, 
+      type, 
+      dir, 
+      backgroundColor,
+      youtubeVideoId,
+      youtubeStartTime
+    }); 
+  } 
+  
+  const totalDuration = slideData.reduce((acc, s) => acc + s.transition + s.display, 0); 
 
-    const totalDuration = slideData.reduce(
-      (acc, s) => acc + s.transition + s.display,
-      0
-    );
-
-    // Check if the HTML content from the editor contains a table
-    const containsTable = editorHtml.includes("<table");
-    const tableInitializationScript = containsTable
-      ? `<script> 
+  // Check if the HTML content from the editor contains a table 
+  const containsTable = editorHtml.includes('<table'); 
+  const tableInitializationScript = containsTable ? 
+    `<script> 
       $(document).ready(function() { 
         $('table').DataTable({ 
           dom: 'Bfrtip', 
           buttons: ['copy', 'csv', 'excel', 'pdf', 'print'] 
         }); 
       }); 
-    </script>`
-      : "";
-
-    const headContent = [
-      `<style>${editorCss}</style>`,
-      ...styles.map((url) => `<link rel="stylesheet" href="${url}">`),
-      ...scripts.map((url) => `<script src="${url}"></script>`),
-      tableInitializationScript, // Add script only if a table exists
-    ].join("");
-
-    const fullHTML = `<!DOCTYPE html> 
+    </script>` : ''; 
+  
+  const headContent = [ 
+    `<style>${editorCss}</style>`, 
+    ...styles.map(url => `<link rel="stylesheet" href="${url}">`), 
+    ...scripts.map(url => `<script src="${url}"></script>`), 
+    tableInitializationScript // Add script only if a table exists 
+  ].join(''); 
+  
+  const fullHTML = `<!DOCTYPE html> 
 <html lang="en"> 
 <head> 
   <meta charset="UTF-8" /> 
@@ -1005,6 +1014,8 @@ function customVideoIn(editor) {
   <script src="https://cdn.datatables.net/buttons/1.2.1/js/buttons.print.min.js"></script> 
   <script src="https://code.highcharts.com/highcharts.js"></script> 
   <script src="https://code.highcharts.com/modules/drilldown.js"></script> 
+  <!-- YouTube API -->
+  <script src="https://www.youtube.com/iframe_api"></script>
   <style> 
   html, body { 
     margin: 0; 
@@ -1215,10 +1226,10 @@ function customVideoIn(editor) {
     border-color: rgba(255,255,255,0.7);
   }
   
-  .thumbnail.active {
-    border: 3px solid #ff3636;
-    box-shadow: 0 0 15px rgba(255, 50, 50, 0.5);
-  }
+.thumbnail.active {
+  border: 3px solid #ff3636;
+  box-shadow: 0 0 15px rgba(255, 50, 50, 0.5);
+}
 
   .thumbnail-label {
     position: absolute;
@@ -1235,9 +1246,17 @@ function customVideoIn(editor) {
   </style> 
 </head> 
 <body> 
-  ${slideData.map((s, i) => `<div class="slide" id="slide-${i}" style="width:${s.width}px;height:${s.height}px;background-color:${s.backgroundColor};"> 
-    ${decodeURIComponent(s.img)} 
-  </div>`).join('')} 
+  ${slideData.map((s, i) => {
+    let slideContent = decodeURIComponent(s.img);
+    // Replace YouTube iframes with divs that will be converted to YouTube players
+    if (s.youtubeVideoId) {
+      slideContent = slideContent.replace(
+        /<iframe[^>]*src[^>]*(?:youtube\.com\/embed\/|youtu\.be\/)[^>]*><\/iframe>/gi,
+        `<div id="youtube-player-${i}" class="youtube-player-container"></div>`
+      );
+    }
+    return `<div class="slide" id="slide-${i}" style="width:${s.width}px;height:${s.height}px;background-color:${s.backgroundColor};">${slideContent}</div>`;
+  }).join('')} 
   
   <!-- Thumbnail Navigation -->
   <div id="thumbnailContainer">
@@ -1254,58 +1273,19 @@ function customVideoIn(editor) {
   </div> 
   <div id="timeLabel">00:00 / 00:00</div> 
   
-  <script src="https://www.youtube.com/iframe_api"></script>
   <script> 
   const slides = [...document.querySelectorAll('.slide')]; 
   const thumbnails = [...document.querySelectorAll('.thumbnail')];
-  const slideData = [
-    {
-      "img": "%3Cdiv%20id%3D%22is4a%22%20data-i_designer-type%3D%22video%22%20draggable%3D%22true%22%20allowfullscreen%3D%22allowfullscreen%22%20class%3D%22%22%3E%3Ciframe%20src%3D%22https%3A%2F%2Fwww.youtube.com%2Fembed%2FBdURb_Pdt10%3Ffeature%3Dshared%26amp%3Benablejsapi%3D1%22%20frameborder%3D%220%22%20allowfullscreen%3D%22true%22%20class%3D%22i_designer-no-pointer%22%20style%3D%22height%3A%20100%25%3B%20width%3A%20100%25%3B%22%3E%3C%2Fiframe%3E%3C%2Fdiv%3E",
-      "width": 595,
-      "height": 840,
-      "transition": 1,
-      "display": 671,
-      "type": "none",
-      "dir": "none",
-      "backgroundColor": "rgba(0, 0, 0, 0)",
-      "hasVideo": true,
-      "videoId": "BdURb_Pdt10"
-    },
-    {
-      "img": "",
-      "width": 595,
-      "height": 840,
-      "transition": 1,
-      "display": 5,
-      "type": "none",
-      "dir": "none",
-      "backgroundColor": "rgb(149, 62, 62)",
-      "hasVideo": false
-    },
-    {
-      "img": "",
-      "width": 595,
-      "height": 840,
-      "transition": 1,
-      "display": 5,
-      "type": "none",
-      "dir": "none",
-      "backgroundColor": "rgba(0, 0, 0, 0)",
-      "hasVideo": false
-    }
-  ];
-  const totalTime = 684; 
+  const slideData = ${JSON.stringify(slideData)}; 
+  const totalTime = ${totalDuration}; 
   const progressBar = document.getElementById("progressBar"); 
   const timeLabel = document.getElementById("timeLabel"); 
   
   // YouTube API variables
-  let youtubePlayer = null;
+  let youtubePlayersReady = false;
   const youtubePlayers = {};
-  let videoReady = false;
-  let videoDuration = 0;
-  let videoCurrentTime = 0;
-  let isVideoSlide = false;
-  let videoUpdateInterval = null;
+  let currentYouTubePlayer = null;
+  let youtubeApiReady = false;
   
   // Add slide boundary markers 
   const progressContainer = document.getElementById("progressContainer"); 
@@ -1326,82 +1306,95 @@ function customVideoIn(editor) {
   let playing = true; 
   let last = null; 
   let rafId; 
+  let slideshowStartTime = 0; // Track when slideshow started for YouTube sync
   
-  // YouTube API Ready
+  // YouTube API Ready Callback
   function onYouTubeIframeAPIReady() {
-  if (window.YT && window.YT.Player) {
-    youtubePlayer = new YT.Player('youtube-iframe', {
-      events: {
-        'onReady': onPlayerReady,
-        'onStateChange': onPlayerStateChange
+    youtubeApiReady = true;
+    initializeYouTubePlayers();
+  }
+  
+  function initializeYouTubePlayers() {
+    slideData.forEach((slide, index) => {
+      if (slide.youtubeVideoId) {
+        const playerDiv = document.getElementById(\`youtube-player-\${index}\`);
+        if (playerDiv) {
+          // Set size for YouTube player container
+          playerDiv.style.width = '100%';
+          playerDiv.style.height = '400px';
+          
+          youtubePlayers[index] = new YT.Player(\`youtube-player-\${index}\`, {
+            height: '400',
+            width: '100%',
+            videoId: slide.youtubeVideoId,
+            playerVars: {
+              'autoplay': 0,
+              'controls': 0, // Hide YouTube controls since we're using our own
+              'disablekb': 1,
+              'fs': 0,
+              'iv_load_policy': 3,
+              'modestbranding': 1,
+              'playsinline': 1,
+              'rel': 0,
+              'start': slide.youtubeStartTime || 0
+            },
+            events: {
+              'onReady': onPlayerReady,
+              'onStateChange': onPlayerStateChange
+            }
+          });
+        }
       }
     });
-  } else {
-    // Retry after a short delay if YT API isn't ready
-    setTimeout(onYouTubeIframeAPIReady, 100);
+    youtubePlayersReady = true;
   }
-}
-  
-function initYouTubePlayers() {
-  slides.forEach((slide, index) => {
-    const iframe = slide.querySelector('iframe[src*="youtube.com"]');
-    if (iframe) {
-      const player = new YT.Player(`youtube-iframe-${index}`, {
-        events: {
-          onReady: (event) => {
-            console.log(`YouTube player ${index} ready`);
-          },
-          onStateChange: (event) => {
-            if (index === current) handleYTStateChange(event);
-          }
-        },
-        playerVars: {
-          controls: 0, // Hide YouTube controls
-          modestbranding: 1,
-          rel: 0,
-          showinfo: 0
-        }
-      });
-      youtubePlayers[index] = player;
-    }
-  });
-}
-
   
   function onPlayerReady(event) {
-  videoReady = true;
-  try {
-    videoDuration = youtubePlayer.getDuration() || 0;
-    console.log('YouTube player ready, duration:', videoDuration);
-  } catch (e) {
-    console.log('Error getting video duration:', e);
-    videoDuration = 0;
+    // Player is ready, but don't auto-play
+    event.target.pauseVideo();
   }
-}
   
   function onPlayerStateChange(event) {
-    if (event.data === YT.PlayerState.PLAYING) {
-      startVideoTimeUpdate();
-    } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
-      stopVideoTimeUpdate();
-    }
-  }
-  
-  function startVideoTimeUpdate() {
-    if (videoUpdateInterval) clearInterval(videoUpdateInterval);
-    videoUpdateInterval = setInterval(() => {
-      if (youtubePlayer && videoReady && isVideoSlide) {
-        videoCurrentTime = youtubePlayer.getCurrentTime();
-        updateProgressUI();
+    // Sync slideshow state with YouTube player state
+    if (currentYouTubePlayer && event.target === currentYouTubePlayer) {
+      if (event.data === YT.PlayerState.PLAYING && !playing) {
+        // If YouTube starts playing but slideshow is paused, pause YouTube
+        currentYouTubePlayer.pauseVideo();
+      } else if (event.data === YT.PlayerState.PAUSED && playing) {
+        // If YouTube pauses but slideshow is playing, play YouTube
+        currentYouTubePlayer.playVideo();
       }
-    }, 100);
+    }
   }
   
-  function stopVideoTimeUpdate() {
-    if (videoUpdateInterval) {
-      clearInterval(videoUpdateInterval);
-      videoUpdateInterval = null;
+  function syncYouTubePlayer() {
+    if (currentYouTubePlayer && youtubePlayersReady) {
+      const slideStartTime = getSlideTiming(current).startTime;
+      const currentSlideElapsed = elapsed - slideStartTime;
+      const youtubeTime = slideData[current].youtubeStartTime + currentSlideElapsed;
+      
+      try {
+        currentYouTubePlayer.seekTo(youtubeTime, true);
+        if (playing) {
+          currentYouTubePlayer.playVideo();
+        } else {
+          currentYouTubePlayer.pauseVideo();
+        }
+      } catch (e) {
+        console.log('YouTube player not ready yet');
+      }
     }
+  }
+  
+  function getSlideTiming(slideIndex) {
+    let startTime = 0;
+    for (let i = 0; i < slideIndex; i++) {
+      startTime += slideData[i].transition + slideData[i].display;
+    }
+    return {
+      startTime: startTime,
+      endTime: startTime + slideData[slideIndex].transition + slideData[slideIndex].display
+    };
   }
   
   function format(t) { 
@@ -1411,17 +1404,9 @@ function initYouTubePlayers() {
   } 
   
   function updateProgressUI() { 
-    if (isVideoSlide && videoReady && youtubePlayer) {
-      // Video slide - show video progress
-      const percent = (videoCurrentTime / videoDuration) * 100;
-      progressBar.style.width = percent + '%';
-      timeLabel.textContent = format(videoCurrentTime) + ' / ' + format(videoDuration);
-    } else {
-      // Regular slideshow progress
-      const percent = (elapsed / totalTime) * 100; 
-      progressBar.style.width = percent + '%'; 
-      timeLabel.textContent = format(elapsed) + ' / ' + format(totalTime); 
-    }
+    const percent = (elapsed / totalTime) * 100; 
+    progressBar.style.width = percent + '%'; 
+    timeLabel.textContent = format(elapsed) + ' / ' + format(totalTime); 
     
     // Update active thumbnail
     thumbnails.forEach((thumb, i) => {
@@ -1429,49 +1414,41 @@ function initYouTubePlayers() {
     });
   } 
   
-
   function showSlide(index) { 
-  slides.forEach((s, i) => { 
-    s.style.display = i === index ? 'block' : 'none'; 
-    s.style.opacity = 0; 
-    if (i === index) { 
-      const { type, dir } = slideData[i]; 
-      if (type === 'zoom') { 
-        s.style.transform = 'translate(-50%, -50%) scale(0.8)'; 
-      } else if (type === 'slide') { 
-        let tx = 0, ty = 0, dist = 100; 
-        if (dir === 'left') tx = -dist; 
-        if (dir === 'right') tx = dist; 
-        if (dir === 'up') ty = -dist; 
-        if (dir === 'down') ty = dist; 
-        s.style.transform = \`translate(calc(-50% + \${tx}%), calc(-50% + \${ty}%))\`; 
-      } else { 
-        s.style.transform = 'translate(-50%, -50%)'; 
+    // Pause current YouTube player if any
+    if (currentYouTubePlayer) {
+      currentYouTubePlayer.pauseVideo();
+    }
+    
+    // Set new current YouTube player
+    currentYouTubePlayer = youtubePlayers[index] || null;
+    
+    slides.forEach((s, i) => { 
+      s.style.display = i === index ? 'block' : 'none'; 
+      s.style.opacity = 0; 
+      if (i === index) { 
+        const { type, dir } = slideData[i]; 
+        if (type === 'zoom') { 
+          s.style.transform = 'translate(-50%, -50%) scale(0.8)'; 
+        } else if (type === 'slide') { 
+          let tx = 0, ty = 0, dist = 100; 
+          if (dir === 'left') tx = -dist; 
+          if (dir === 'right') tx = dist; 
+          if (dir === 'up') ty = -dist; 
+          if (dir === 'down') ty = dist; 
+          s.style.transform = \`translate(calc(-50% + \${tx}%), calc(-50% + \${ty}%))\`; 
+        } else { 
+          s.style.transform = 'translate(-50%, -50%)'; 
+        } 
       } 
-    } 
-  }); 
+    }); 
+    
+    // Sync YouTube player when slide becomes visible
+    if (phase === 'display') {
+      setTimeout(() => syncYouTubePlayer(), 100);
+    }
+  } 
   
-  // Check if current slide is a video slide
-  isVideoSlide = slideData[current]?.hasVideo || false;
-  
-  // Handle video slide
-  if (isVideoSlide && youtubePlayers[index]) {
-  youtubePlayer = youtubePlayers[index];
-  videoReady = true;
-  try {
-    videoDuration = youtubePlayer.getDuration();
-    videoCurrentTime = youtubePlayer.getCurrentTime();
-  } catch (e) {
-    videoDuration = 0;
-    videoCurrentTime = 0;
-  }
-  startVideoTimeUpdate();
-} else {
-  stopVideoTimeUpdate();
-}
-
-}
-
   function renderTransition(progress) { 
     const slide = slides[current]; 
     const { type, dir } = slideData[current]; 
@@ -1492,35 +1469,38 @@ function initYouTubePlayers() {
       slide.style.transform = \`translate(calc(-50% + \${tx}%), calc(-50% + \${ty}%))\`; 
     } 
   } 
-    
   
   function run(timestamp) { 
     if (!last) last = timestamp; 
     const delta = (timestamp - last) / 1000; 
     last = timestamp; 
+    remaining -= delta; 
+    elapsed += delta; 
+    updateProgressUI(); 
     
-    // Don't update slideshow timing when on video slide
-    if (!isVideoSlide) {
-      remaining -= delta; 
-      elapsed += delta; 
-      updateProgressUI(); 
-    }
-    
-    if (phase === 'transition' && !isVideoSlide) { 
+    if (phase === 'transition') { 
       const full = slideData[current].transition; 
       const progress = 1 - (remaining / full); 
       renderTransition(progress); 
-    } 
+    } else if (phase === 'display' && currentYouTubePlayer) {
+      // Continuously sync YouTube player during display phase
+      syncYouTubePlayer();
+    }
     
-    if (remaining <= 0 && !isVideoSlide) { 
+    if (remaining <= 0) { 
       if (phase === 'transition') { 
         phase = 'display'; 
         remaining = slideData[current].display; 
         slides[current].style.opacity = 1; 
+        // Start YouTube video when transition completes
+        syncYouTubePlayer();
       } else { 
         if (current === slideData.length - 1) { 
           playing = false; 
           document.getElementById("playBtn").innerHTML = '<i class="fas fa-play"></i>'; 
+          if (currentYouTubePlayer) {
+            currentYouTubePlayer.pauseVideo();
+          }
           return; 
         } 
         slides[current].style.opacity = 0; 
@@ -1539,12 +1519,12 @@ function initYouTubePlayers() {
     const playBtn = document.getElementById("playBtn");
     playBtn.innerHTML = playing ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
     
-    // Handle video controls
-    if (isVideoSlide && videoReady && youtubePlayer) {
+    // Control YouTube player
+    if (currentYouTubePlayer) {
       if (playing) {
-        youtubePlayer.playVideo();
+        currentYouTubePlayer.playVideo();
       } else {
-        youtubePlayer.pauseVideo();
+        currentYouTubePlayer.pauseVideo();
       }
     }
     
@@ -1558,18 +1538,8 @@ function initYouTubePlayers() {
   
   function seek(e) { 
     const pct = e.offsetX / e.currentTarget.offsetWidth; 
-    
-    if (isVideoSlide && videoReady && youtubePlayer) {
-      // Seek in video
-      const targetTime = pct * videoDuration;
-      youtubePlayer.seekTo(targetTime);
-      videoCurrentTime = targetTime;
-      updateProgressUI();
-    } else {
-      // Seek in slideshow
-      const targetTime = pct * totalTime; 
-      jumpToTime(targetTime);
-    }
+    const targetTime = pct * totalTime; 
+    jumpToTime(targetTime);
   } 
   
   function jumpToSlide(slideIndex) {
@@ -1609,6 +1579,8 @@ function initYouTubePlayers() {
         showSlide(current);
         slides[current].style.opacity = 1;
         updateProgressUI();
+        // Sync YouTube player after seeking
+        setTimeout(() => syncYouTubePlayer(), 100);
         return restart();
       }
       
@@ -1622,52 +1594,30 @@ function initYouTubePlayers() {
     if (playing) rafId = requestAnimationFrame(run); 
   } 
   
-  window.onload = () => {
-  showSlide(current);
-  updateProgressUI();
-  iframe.setAttribute('id', `youtube-iframe-${index}`);
-
-  if (playing) rafId = requestAnimationFrame(run);
-
-  setupIdleTimer();
-
-  // Loop through slides and setup YouTube players
-  slides.forEach((slide, index) => {
-    const iframe = slide.querySelector('iframe[src*="youtube.com"]');
-    if (iframe) {
-      // Set enablejsapi=1 and rel=0 in src if not present
-      let src = iframe.src;
-      if (!src.includes('enablejsapi=1')) {
-        const separator = src.includes('?') ? '&' : '?';
-        src += separator + "enablejsapi=1&rel=0";
-        iframe.src = src;
-      }
-
-      iframe.setAttribute('id', 'youtube-iframe-' + index);
+  // Initialize when page loads
+  window.onload = () => { 
+    showSlide(current); 
+    updateProgressUI(); 
+    
+    // Initialize YouTube API if not already ready
+    if (!youtubeApiReady && typeof YT === 'undefined') {
+      // YouTube API will call onYouTubeIframeAPIReady when ready
+      window.onYouTubeIframeAPIReady = onYouTubeIframeAPIReady;
+    } else if (youtubeApiReady || typeof YT !== 'undefined') {
+      // API is already loaded
+      onYouTubeIframeAPIReady();
     }
-  });
-
-  // Load YouTube API
-if (!window.YT || !window.YT.Player) {
-  window.onYouTubeIframeAPIReady = () => initYouTubePlayers();
-  if (!document.querySelector('script[src*="youtube.com/iframe_api"]')) {
-    const tag = document.createElement('script');
-    tag.src = "https://www.youtube.com/iframe_api";
-    document.head.appendChild(tag);
-  }
-} else {
-  initYouTubePlayers();
-}
-
-
-  // Add thumbnail backgrounds
-  thumbnails.forEach((thumb) => {
-    thumb.style.backgroundImage = "url('https://blogs.windows.com/wp-content/uploads/prod/sites/44/2022/09/photos-newicon.png')";
-  });
-};
-
-
-  
+    
+    if (playing) rafId = requestAnimationFrame(run); 
+    
+    // Set up idle timer for UI elements
+    setupIdleTimer();
+    
+    // Set specific background image for each thumbnail
+    thumbnails.forEach((thumb) => {
+      thumb.style.backgroundImage = "url('https://blogs.windows.com/wp-content/uploads/prod/sites/44/2022/09/photos-newicon.png')";
+    });
+  }; 
   
   // Handle idle time for UI visibility
   let idleTimer = null;
@@ -1707,30 +1657,18 @@ if (!window.YT || !window.YT.Player) {
     document.querySelector('.controls').classList.remove('visible');
   }
   
-  // Initialize YouTube API if not already loaded
-  // Initialize YouTube API if not already loaded
-if (!window.YT || !window.YT.Player) {
+  // Global YouTube API ready callback
   window.onYouTubeIframeAPIReady = onYouTubeIframeAPIReady;
-  if (!document.querySelector('script[src*="youtube.com/iframe_api"]')) {
-    const tag = document.createElement('script');
-    tag.src = "https://www.youtube.com/iframe_api";
-    const firstScriptTag = document.getElementsByTagName('script')[0];
-    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-  }
-} else {
-  onYouTubeIframeAPIReady();
-}
   </script> 
 </body> 
-</html>`;
+</html>`; 
 
-    const blob = new Blob([fullHTML], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "interactive_slideshow.html";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  }
-}
+  const blob = new Blob([fullHTML], { type: 'text/html' }); 
+  const url = URL.createObjectURL(blob); 
+  const a = document.createElement("a"); 
+  a.href = url; 
+  a.download = "interactive_slideshow.html"; 
+  document.body.appendChild(a); 
+  a.click(); 
+  document.body.removeChild(a); 
+}}
