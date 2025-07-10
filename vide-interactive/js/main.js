@@ -124,6 +124,11 @@ editor.Panels.addPanel({ id: "devices-c" })
       attributes: { title: "Change Language", id: "multiLanguage" },
       className: "fa fa-language",
     },  
+    {
+      id: "excelCsvUpload",
+      attributes: { title: "Upload Excel/CSV file", id: "excelCsvUpload" },
+      className: "fa fa-file-excel-o",
+    },
     // {
     //   id: "allTemplateList",
     //   attributes: { title: "View All Template", id: "allTemplateList" },
@@ -143,6 +148,9 @@ save.addEventListener("click", savePage, true);
 
 var importPage = document.getElementById("importPage");
 importPage.addEventListener("click", importSinglePages, true);
+
+var excelscv = document.getElementById("excelCsvUpload"); 
+excelscv.addEventListener("click", uploadExcelCsv, true);
 
 // var viewAllPage = document.getElementById("allTemplateList");
 // viewAllPage.addEventListener("click", viewAllTemplates, true);
@@ -405,6 +413,56 @@ function updateComponentsWithNewJson(editor) {
       }
   } 
 }  
+
+function uploadExcelCsv() {
+  const modal = editor.Modal;
+  const container = document.createElement('div');
+
+  container.innerHTML = `
+    <div style="padding: 10px;">
+      <h4>Upload Excel / CSV File</h4>
+      <input type="file" id="excelCsvInput" accept=".csv, .xlsx" />
+      <br><br>
+      <button id="uploadExcelCsvBtn" style="padding: 5px 10px;">Add</button>
+    </div>
+  `;
+
+  modal.setTitle('Upload Data File');
+  modal.setContent(container);
+  modal.open();
+
+  container.querySelector('#uploadExcelCsvBtn').onclick = () => {
+    const input = container.querySelector('#excelCsvInput');
+    const file = input.files[0];
+
+    if (!file) {
+      alert('Please select a file!');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    fetch('http://192.168.0.188:8080/api/excel/upload', {
+      method: 'POST',
+      body: formData,
+    })
+      .then(response => {
+        if (!response.ok) throw new Error('Upload failed');
+        return response.json();
+      })
+      .then(data => {
+        alert('Upload successful!');
+        console.log(data);
+        modal.close();
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Upload failed.');
+      });
+  };
+}
+
 
 editor.on('run:core:canvas-clear', () => {
   // 🧹 Cleanup slide UI and state

@@ -44892,643 +44892,659 @@
             };
           }
           var zt = "video",
-    Ut = "yt",
-    Wt = "vi",
-    $t = "ytnc",
+            Ut = "yt",
+            Wt = "vi",
+            $t = "ytnc",
 
-    qt = function (t) {
-      return t && "0" !== t;
-    },
+            qt = function (t) {
+              return t && "0" !== t;
+            },
+            Gt = (function (t) {
 
-    // Helper function to convert file to base64
-    fileToBase64 = function(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    },
+              (0, u.Z)(n, t);
+              var e = Ht(n);
+              function n() {
+                return (0, l.Z)(this, n), e.apply(this, arguments);
+              }
+              return (
+                (0, c.Z)(n, [
+                  {
+                    key: "defaults",
+                    get: function () {
+                      return Bt(
+                        Bt(
+                          {},
+                          (0, m.Z)((0, f.Z)(n.prototype), "defaults", this)
+                        ),
+                        {},
+                        {
+                          type: zt,
+                          tagName: zt,
+                          videoId: "",
+                          void: 0,
+                          provider: "so",
+                          ytUrl: "https://www.youtube.com/embed/",
+                          ytncUrl: "https://www.youtube-nocookie.com/embed/",
+                          viUrl: "https://player.vimeo.com/video/",
+                          loop: 0,
+                          poster: "",
+                          muted: 1,
+                          autoplay: 1,
+                          controls: 0,
+                          preload: "auto",
+                          playsinline: 1,
+                          color: "",
+                          list: "",
+                          rel: 1,
+                          modestbranding: 0,
+                          sources: [],
+                          attributes: { allowfullscreen: "allowfullscreen" },
+                        }
+                      );
+                    },
+                  },
+                  {
+                    key: "initialize",
+                    value: function (t, e) {
+                      // if (this.get("type") == "video") {
+                      //   window.open("https://www.google.com");
+                      // }
+                      (this.em = e.em),
 
-    // Helper function to trigger file upload directly
-    triggerFileUpload = function(callback) {
-      const fileInput = document.createElement('input');
-      fileInput.type = 'file';
-      fileInput.accept = 'video/*';
-      fileInput.style.display = 'none';
-      
-      fileInput.addEventListener('change', async (e) => {
-        const file = e.target.files[0];
-        if (file) {
-          try {
-            const base64 = await fileToBase64(file);
-            callback(base64);
-          } catch (error) {
-            alert('Error reading file: ' + error.message);
+                        this.get("src") && this.parseFromSrc(),
+                        this.updateTraits(),
+                        this.listenTo(
+                          this,
+                          "change:provider",
+                          this.updateTraits
+                        ),
+                        this.listenTo(
+                          this,
+                          "change:videoId change:provider",
+                          this.updateSrc
+                        ),
+                        it.prototype.initialize.apply(this, arguments);
+                    },
+                  },
+                  {
+                    key: "updateTraits",
+                    value: function () {
+                      var t,
+                        e = this.em,
+                        n = "iframe";
+                      switch (this.get("provider")) {
+                        case Ut:
+                        case $t:
+                          t = this.getYoutubeTraits();
+                          break;
+                        case Wt:
+                          t = this.getVimeoTraits();
+                          break;
+                        default:
+                          (n = "video"), (t = this.getSourceTraits());
+                      }
+                      this.set({ tagName: n }, { silent: 1 }),
+                        this.set({ traits: t }),
+                        e.get("ready") && e.trigger("component:toggled");
+                    },
+                  },
+                  {
+                    key: "parseFromSrc",
+                    value: function () {
+                      var t = this.get("provider"),
+                        e = this.parseUri(this.get("src")),
+                        n = e.query;
+                      switch (t) {
+                        case Ut:
+                        case $t:
+                        case Wt:
+                          this.set("videoId", e.pathname.split("/").pop()),
+                            n.list && this.set("list", n.list),
+                            qt(n.autoplay) && this.set("autoplay", 1),
+                            qt(n.loop) && this.set("loop", 1),
+                            0 === parseInt(n.controls) &&
+                            this.set("controls", 0),
+                            qt(n.color) && this.set("color", n.color),
+                            "0" === n.rel && this.set("rel", 0),
+                            "1" === n.modestbranding &&
+                            this.set("modestbranding", 1);
+                      }
+                    },
+                  },
+                  {
+                    key: "updateSrc",
+                    value: function () {
+                      var t = "";
+                      switch (this.get("provider")) {
+                        case Ut:
+                          t = this.getYoutubeSrc();
+                          break;
+                        case $t:
+                          t = this.getYoutubeNoCookieSrc();
+                          break;
+                        case Wt:
+                          t = this.getVimeoSrc();
+                      }
+                      this.set({ src: t });
+                    },
+                  },
+                  {
+                    key: "getAttrToHTML",
+                    value: function () {
+                      for (
+                        var t = arguments.length, e = new Array(t), n = 0;
+                        n < t;
+                        n++
+                      )
+                        e[n] = arguments[n];
+                      var r = it.prototype.getAttrToHTML.apply(this, e),
+                        o = this.get("provider");
+                      switch (o) {
+                        case Ut:
+                        case $t:
+                        case Wt:
+                          break;
+                        default:
+                          this.get("loop") && (r.loop = "loop"),
+                          this.get("autoplay") && (r.autoplay = "autoplay"),
+                          this.get("controls") && (r.controls = "controls"),
+                          this.get("muted") && (r.muted = "muted"),
+                          this.get("preload") && (r.preload = this.get("preload")),
+                          this.get("playsinline") && (r.playsinline = "playsinline");
+                      }
+                      return r;
+                    },
+                  },
+                  {
+                    key: "getProviderTrait",
+                    value: function () {
+                      return {
+                        type: "select",
+                        label: "Provider",
+                        name: "provider",
+                        changeProp: 1,
+                        options: [
+                          { value: "so", name: "HTML5 Source" },
+                          { value: Ut, name: "Youtube" },
+                          { value: $t, name: "Youtube (no cookie)" },
+                          { value: Wt, name: "Vimeo" },
+                        ],
+                      };
+                    },
+                  },
+                  {
+                    key: "getSourceTraits",
+                    value: function () {
+                      return [
+                        this.getProviderTrait(),
+                        {
+                          label: "Source",
+                          name: "src",
+                          placeholder: "eg. ./media/video.mp4",
+                          changeProp: 1,
+                        },
+                        {
+                          label: "Poster",
+                          name: "poster",
+                          placeholder: "eg. ./media/image.jpg",
+                        },
+                        this.getAutoplayTrait(),
+                        this.getLoopTrait(),
+                        this.getControlsTrait(),
+                        this.getMutedTrait(),    
+                        this.getPreloadTrait(),   
+                        this.getPlaysinlineTrait() 
+                      ];
+                    },
+                  },
+                  {
+                    key: "getYoutubeTraits",
+                    value: function () {
+                      return [
+                        this.getProviderTrait(),
+                        {
+                          label: "Video ID",
+                          name: "videoId",
+                          placeholder: "eg. jNQXAC9IVRw",
+                          changeProp: 1,
+                        },
+                        this.getAutoplayTrait(),
+                        this.getLoopTrait(),
+                        this.getControlsTrait(),
+                        {
+                          type: "checkbox",
+                          label: "Related",
+                          name: "rel",
+                          changeProp: 1,
+                        },
+                        {
+                          type: "checkbox",
+                          label: "Modest",
+                          name: "modestbranding",
+                          changeProp: 1,
+                        },
+                      ];
+                    },
+                  },
+                  {
+                    key: "getVimeoTraits",
+                    value: function () {
+                      return [
+                        this.getProviderTrait(),
+                        {
+                          label: "Video ID",
+                          name: "videoId",
+                          placeholder: "eg. 123456789",
+                          changeProp: 1,
+                        },
+                        {
+                          label: "Color",
+                          name: "color",
+                          placeholder: "eg. FF0000",
+                          changeProp: 1,
+                        },
+                        this.getAutoplayTrait(),
+                        this.getLoopTrait(),
+                      ];
+                    },
+                  },
+                  {
+                    key: "getAutoplayTrait",
+                    value: function () {
+                      return {
+                        type: "checkbox",
+                        label: "Autoplay",
+                        name: "autoplay",
+                        changeProp: 1,
+                      };
+                    },
+                  },
+                  {
+                    key: "getLoopTrait",
+                    value: function () {
+                      return {
+                        type: "checkbox",
+                        label: "Loop",
+                        name: "loop",
+                        changeProp: 1,
+                      };
+                    },
+                  },
+                  {
+                    key: "getControlsTrait",
+                    value: function () {
+                      return {
+                        type: "checkbox",
+                        label: "Controls",
+                        name: "controls",
+                        changeProp: 1,
+                      };
+                    },
+                  },
+                  {
+                  key: "getMutedTrait",
+                  value: function () {
+                    return {
+                      type: "checkbox",
+                      label: "Muted",
+                      name: "muted",
+                      changeProp: 1,
+                    };
+                  },
+                },
+                {
+                  key: "getPreloadTrait",
+                  value: function () {
+                    return {
+                      type: "select",
+                      label: "Preload",
+                      name: "preload",
+                      changeProp: 1,
+                      options: [
+                        { value: "auto", name: "Auto" },
+                        { value: "metadata", name: "Metadata" },
+                        { value: "none", name: "None" },
+                      ],
+                    };
+                  },
+                },
+                {
+                  key: "getPlaysinlineTrait",
+                  value: function () {
+                    return {
+                      type: "checkbox",
+                      label: "Plays Inline",
+                      name: "playsinline",
+                      changeProp: 1,
+                    };
+                  },
+                },
+                  {
+                    key: "getYoutubeSrc",
+                    value: function () {
+                      var t = this.get("videoId"),
+                        e = this.get("ytUrl"),
+                        n = this.get("list");
+                      return (
+                        (e += t + (t.indexOf("?") < 0 ? "?" : "")),
+                        (e += n ? "&list=".concat(n) : ""),
+                        (e += this.get("autoplay") ? "&autoplay=1" : ""),
+                        (e += this.get("controls")
+                          ? ""
+                          : "&controls=0&showinfo=0"),
+                        (e += this.get("loop")
+                          ? "&loop=1&playlist=".concat(t)
+                          : ""),
+                        (e += this.get("rel") ? "" : "&rel=0"),
+                        (e += this.get("modestbranding")
+                          ? "&modestbranding=1"
+                          : "")
+                      );
+                    },
+                  },
+                  {
+                    key: "getYoutubeNoCookieSrc",
+                    value: function () {
+                      var t = this.getYoutubeSrc();
+                      return (t = t.replace(
+                        this.get("ytUrl"),
+                        this.get("ytncUrl")
+                      ));
+                    },
+                  },
+                  {
+                    key: "getVimeoSrc",
+                    value: function () {
+                      var t = this.get("viUrl");
+                      return (
+                        (t += this.get("videoId") + "?"),
+                        (t += this.get("autoplay") ? "&autoplay=1" : ""),
+                        (t += this.get("loop") ? "&loop=1" : ""),
+                        (t += this.get("controls")
+                          ? ""
+                          : "&title=0&portrait=0&badge=0"),
+                        (t += this.get("color")
+                          ? "&color=" + this.get("color")
+                          : "")
+                      );
+                    },
+                  },
+                ]),
+                n
+              );
+            })(it);
+          function Kt(t) {
+            var e = (function () {
+              if ("undefined" == typeof Reflect || !Reflect.construct)
+                return !1;
+              if (Reflect.construct.sham) return !1;
+              if ("function" == typeof Proxy) return !0;
+              try {
+                return (
+                  Boolean.prototype.valueOf.call(
+                    Reflect.construct(Boolean, [], function () { })
+                  ),
+                  !0
+                );
+              } catch (t) {
+                return !1;
+              }
+            })();
+            return function () {
+              var n,
+                r = (0, f.Z)(t);
+              if (e) {
+                var o = (0, f.Z)(this).constructor;
+                n = Reflect.construct(r, arguments, o);
+              } else n = r.apply(this, arguments);
+              return (0, p.Z)(this, n);
+            };
           }
-        }
-        document.body.removeChild(fileInput);
-      });
-
-      document.body.appendChild(fileInput);
-      fileInput.click();
-    },
-
-    Gt = (function (t) {
-      (0, u.Z)(n, t);
-      var e = Ht(n);
-      function n() {
-        return (0, l.Z)(this, n), e.apply(this, arguments);
-      }
-      return (
-        (0, c.Z)(n, [
-          {
-            key: "defaults",
-            get: function () {
-              return Bt(
-                Bt(
-                  {},
-                  (0, m.Z)((0, f.Z)(n.prototype), "defaults", this)
-                ),
-                {},
-                {
-                  type: zt,
-                  tagName: zt,
-                  videoId: "",
-                  void: 0,
-                  provider: "so",
-                  ytUrl: "https://www.youtube.com/embed/",
-                  ytncUrl: "https://www.youtube-nocookie.com/embed/",
-                  viUrl: "https://player.vimeo.com/video/",
-                  loop: 0,
-                  poster: "",
-                  muted: 0,
-                  autoplay: 0,
-                  controls: 1,
-                  color: "",
-                  list: "",
-                  rel: 1,
-                  modestbranding: 0,
-                  sources: [],
-                  attributes: { allowfullscreen: "allowfullscreen" },
-                  // New property for base64 video data
-                  base64Data: "",
-                }
-              );
-            },
-          },
-          {
-            key: "initialize",
-            value: function (t, e) {
-              (this.em = e.em),
-                this.get("src") && this.parseFromSrc(),
-                this.updateTraits(),
-                this.listenTo(
-                  this,
-                  "change:provider",
-                  this.updateTraits
-                ),
-                this.listenTo(
-                  this,
-                  "change:videoId change:provider change:base64Data",
-                  this.updateSrc
-                ),
-                it.prototype.initialize.apply(this, arguments);
-            },
-          },
-          {
-            key: "updateTraits",
-            value: function () {
-              var t,
-                e = this.em,
-                n = "iframe";
-              switch (this.get("provider")) {
-                case Ut:
-                case $t:
-                  t = this.getYoutubeTraits();
-                  break;
-                case Wt:
-                  t = this.getVimeoTraits();
-                  break;
-                default:
-                  (n = "video"), (t = this.getSourceTraits());
-              }
-              this.set({ tagName: n }, { silent: 1 }),
-                this.set({ traits: t }),
-                e.get("ready") && e.trigger("component:toggled");
-            },
-          },
-          {
-            key: "parseFromSrc",
-            value: function () {
-              var t = this.get("provider"),
-                e = this.parseUri(this.get("src")),
-                n = e.query;
-              switch (t) {
-                case Ut:
-                case $t:
-                case Wt:
-                  this.set("videoId", e.pathname.split("/").pop()),
-                    n.list && this.set("list", n.list),
-                    qt(n.autoplay) && this.set("autoplay", 1),
-                    qt(n.loop) && this.set("loop", 1),
-                    0 === parseInt(n.controls) &&
-                    this.set("controls", 0),
-                    qt(n.color) && this.set("color", n.color),
-                    "0" === n.rel && this.set("rel", 0),
-                    "1" === n.modestbranding &&
-                    this.set("modestbranding", 1);
-              }
-            },
-          },
-          {
-            key: "updateSrc",
-            value: function () {
-              var t = "";
-              switch (this.get("provider")) {
-                case Ut:
-                  t = this.getYoutubeSrc();
-                  break;
-                case $t:
-                  t = this.getYoutubeNoCookieSrc();
-                  break;
-                case Wt:
-                  t = this.getVimeoSrc();
-                  break;
-                default:
-                  // For local/HTML5 videos, use base64 data if available
-                  t = this.get("base64Data") || this.get("src") || "";
-              }
-              this.set({ src: t });
-            },
-          },
-          {
-            key: "getAttrToHTML",
-            value: function () {
-              for (
-                var t = arguments.length, e = new Array(t), n = 0;
-                n < t;
-                n++
-              )
-                e[n] = arguments[n];
-              var r = it.prototype.getAttrToHTML.apply(this, e),
-                o = this.get("provider");
-              switch (o) {
-                case Ut:
-                case $t:
-                case Wt:
-                  break;
-                default:
-                  this.get("loop") && (r.loop = "loop"),
-                    this.get("autoplay") && (r.autoplay = "autoplay"),
-                    this.get("controls") && (r.controls = "controls");
-              }
-              return r;
-            },
-          },
-          {
-            key: "getProviderTrait",
-            value: function () {
-              return {
-                type: "select",
-                label: "Provider",
-                name: "provider",
-                changeProp: 1,
-                options: [
-                  { value: "so", name: "HTML5 Source" },
-                  { value: Ut, name: "Youtube" },
-                  { value: $t, name: "Youtube (no cookie)" },
-                  { value: Wt, name: "Vimeo" },
-                ],
-              };
-            },
-          },
-          {
-            key: "getSourceTraits",
-            value: function () {
-              return [
-                this.getProviderTrait(),
-                {
-                  label: "Source",
-                  name: "src",
-                  placeholder: "eg. ./media/video.mp4",
-                  changeProp: 1,
-                },
-                // Add file upload button trait
-                {
-                  type: "button",
-                  label: "Upload Video File",
-                  name: "upload-video",
-                  text: "Choose File",
-                  command: (editor) => {
-                    const component = editor.getSelected();
-                    triggerFileUpload((base64Data) => {
-                      component.set({
-                        base64Data: base64Data,
-                        src: base64Data
-                      });
-                    });
-                  }
-                },
-                {
-                  label: "Poster",
-                  name: "poster",
-                  placeholder: "eg. ./media/image.jpg",
-                },
-                this.getAutoplayTrait(),
-                this.getLoopTrait(),
-                this.getControlsTrait(),
-              ];
-            },
-          },
-          {
-            key: "getYoutubeTraits",
-            value: function () {
-              return [
-                this.getProviderTrait(),
-                {
-                  label: "Video ID",
-                  name: "videoId",
-                  placeholder: "eg. jNQXAC9IVRw",
-                  changeProp: 1,
-                },
-                this.getAutoplayTrait(),
-                this.getLoopTrait(),
-                this.getControlsTrait(),
-                {
-                  type: "checkbox",
-                  label: "Related",
-                  name: "rel",
-                  changeProp: 1,
-                },
-                {
-                  type: "checkbox",
-                  label: "Modest",
-                  name: "modestbranding",
-                  changeProp: 1,
-                },
-              ];
-            },
-          },
-          {
-            key: "getVimeoTraits",
-            value: function () {
-              return [
-                this.getProviderTrait(),
-                {
-                  label: "Video ID",
-                  name: "videoId",
-                  placeholder: "eg. 123456789",
-                  changeProp: 1,
-                },
-                {
-                  label: "Color",
-                  name: "color",
-                  placeholder: "eg. FF0000",
-                  changeProp: 1,
-                },
-                this.getAutoplayTrait(),
-                this.getLoopTrait(),
-              ];
-            },
-          },
-          {
-            key: "getAutoplayTrait",
-            value: function () {
-              return {
-                type: "checkbox",
-                label: "Autoplay",
-                name: "autoplay",
-                changeProp: 1,
-              };
-            },
-          },
-          {
-            key: "getLoopTrait",
-            value: function () {
-              return {
-                type: "checkbox",
-                label: "Loop",
-                name: "loop",
-                changeProp: 1,
-              };
-            },
-          },
-          {
-            key: "getControlsTrait",
-            value: function () {
-              return {
-                type: "checkbox",
-                label: "Controls",
-                name: "controls",
-                changeProp: 1,
-              };
-            },
-          },
-          {
-            key: "getYoutubeSrc",
-            value: function () {
-              var t = this.get("videoId"),
-                e = this.get("ytUrl"),
-                n = this.get("list");
-              return (
-                (e += t + (t.indexOf("?") < 0 ? "?" : "")),
-                (e += n ? "&list=".concat(n) : ""),
-                (e += this.get("autoplay") ? "&autoplay=1" : ""),
-                (e += this.get("controls")
-                  ? ""
-                  : "&controls=0&showinfo=0"),
-                (e += this.get("loop")
-                  ? "&loop=1&playlist=".concat(t)
-                  : ""),
-                (e += this.get("rel") ? "" : "&rel=0"),
-                (e += this.get("modestbranding")
-                  ? "&modestbranding=1"
-                  : "")
-              );
-            },
-          },
-          {
-            key: "getYoutubeNoCookieSrc",
-            value: function () {
-              var t = this.getYoutubeSrc();
-              return (t = t.replace(
-                this.get("ytUrl"),
-                this.get("ytncUrl")
-              ));
-            },
-          },
-          {
-            key: "getVimeoSrc",
-            value: function () {
-              var t = this.get("viUrl");
-              return (
-                (t += this.get("videoId") + "?"),
-                (t += this.get("autoplay") ? "&autoplay=1" : ""),
-                (t += this.get("loop") ? "&loop=1" : ""),
-                (t += this.get("controls")
-                  ? ""
-                  : "&title=0&portrait=0&badge=0"),
-                (t += this.get("color")
-                  ? "&color=" + this.get("color")
-                  : "")
-              );
-            },
-          },
-        ]),
-        n
-      );
-    })(it);
-
-function Kt(t) {
-  var e = (function () {
-    if ("undefined" == typeof Reflect || !Reflect.construct)
-      return !1;
-    if (Reflect.construct.sham) return !1;
-    if ("function" == typeof Proxy) return !0;
-    try {
-      return (
-        Boolean.prototype.valueOf.call(
-          Reflect.construct(Boolean, [], function () { })
-        ),
-        !0
-      );
-    } catch (t) {
-      return !1;
-    }
-  })();
-  return function () {
-    var n,
-      r = (0, f.Z)(t);
-    if (e) {
-      var o = (0, f.Z)(this).constructor;
-      n = Reflect.construct(r, arguments, o);
-    } else n = r.apply(this, arguments);
-    return (0, p.Z)(this, n);
-  };
-}
-
-Gt.isComponent = function (t) {
-  var e = "",
-    n = t.tagName,
-    r = t.src,
-    o = /youtube\.com\/embed/.test(r),
-    i = /youtube-nocookie\.com\/embed/.test(r),
-    a = /player\.vimeo\.com\/video/.test(r),
-    s = o || i || a;
-  return (
-    ((0, y.toLowerCase)(n) == zt ||
-      ("iframe" == (0, y.toLowerCase)(n) && s)) &&
-    ((e = { type: "video" }),
-      r && (e.src = r),
-      s &&
-      (o
-        ? (e.provider = Ut)
-        : i
-          ? (e.provider = $t)
-          : a && (e.provider = Wt))),
-    e
-  );
-};
-
-var Yt = (function (t) {
-  (0, u.Z)(n, t);
-  var e = Kt(n);
-  function n() {
-    return (0, l.Z)(this, n), e.apply(this, arguments);
-  }
-  return (
-    (0, c.Z)(n, [
-      {
-        key: "tagName",
-        value: function () {
-          return "div";
-        },
-      },
-      {
-        key: "events",
-        value: function () {
-          return {};
-        },
-      },
-      {
-        key: "initialize",
-        value: function (t) {
-          s.Z.prototype.initialize.apply(this, arguments);
-          var e = this.model,
-            n = [
-              "loop",
-              "autoplay",
-              "controls",
-              "color",
-              "rel",
-              "modestbranding",
-              "poster",
-              "base64Data",
-            ],
-            r = n
-              .map(function (t) {
-                return "change:".concat(t);
-              })
-              .join(" ");
-          this.listenTo(e, "change:provider", this.updateProvider),
-            this.listenTo(e, "change:src", this.updateSrc),
-            this.listenTo(e, r, this.updateVideo);
-        },
-      },
-      {
-        key: "updateProvider",
-        value: function () {
-          var t = this.model.get("provider");
-          (this.el.innerHTML = ""),
-            this.el.appendChild(this.renderByProvider(t));
-        },
-      },
-      {
-        key: "updateSrc",
-        value: function () {
-          var t = this.model,
-            e = this.videoEl;
-          if (e) {
-            var n = t.get("provider"),
-              r = t.get("src");
-            switch (n) {
-              case "yt":
-                r = t.getYoutubeSrc();
-                break;
-              case "ytnc":
-                r = t.getYoutubeNoCookieSrc();
-                break;
-              case "vi":
-                r = t.getVimeoSrc();
-                break;
-              default:
-                // For HTML5 videos, use base64 data if available
-                r = t.get("base64Data") || t.get("src") || "";
+          Gt.isComponent = function (t) {
+            // alert(t.tagName);
+            var e = "",
+              n = t.tagName,
+              r = t.src,
+              o = /youtube\.com\/embed/.test(r),
+              i = /youtube-nocookie\.com\/embed/.test(r),
+              a = /player\.vimeo\.com\/video/.test(r),
+              s = o || i || a;
+            return (
+              ((0, y.toLowerCase)(n) == zt ||
+                ("iframe" == (0, y.toLowerCase)(n) && s)) &&
+              ((e = { type: "video" }),
+                r && (e.src = r),
+                s &&
+                (o
+                  ? (e.provider = Ut)
+                  : i
+                    ? (e.provider = $t)
+                    : a && (e.provider = Wt))),
+              e
+            );
+          };
+          var Yt = (function (t) {
+            (0, u.Z)(n, t);
+            var e = Kt(n);
+            function n() {
+              return (0, l.Z)(this, n), e.apply(this, arguments);
             }
-            e.src = r;
-          }
-        },
-      },
-      {
-        key: "updateVideo",
-        value: function () {
-          var t = this.model.get("provider"),
-            e = this.videoEl,
-            n = this.model;
-          switch (t) {
-            case "yt":
-            case "ytnc":
-            case "vi":
-              this.model.trigger("change:videoId");
-              break;
-            default:
-              (e.loop = n.get("loop")),
-                (e.autoplay = n.get("autoplay")),
-                (e.controls = n.get("controls")),
-                (e.poster = n.get("poster"));
-          }
-        },
-      },
-      {
-        key: "renderByProvider",
-        value: function (t) {
-          var e;
-          switch (t) {
-            case "yt":
-              e = this.renderYoutube();
-              break;
-            case "ytnc":
-              e = this.renderYoutubeNoCookie();
-              break;
-            case "vi":
-              e = this.renderVimeo();
-              break;
-            default:
-              e = this.renderSource();
-          }
-          return (this.videoEl = e), e;
-        },
-      },
-      {
-        key: "renderSource",
-        value: function () {
-          var t = document.createElement("video");
-          var src = this.model.get("base64Data") || this.model.get("src") || "";
-          t.src = src;
-          this.initVideoEl(t);
-          return t;
-        },
-      },
-      {
-        key: "renderYoutube",
-        value: function () {
-          var t = document.createElement("iframe");
-          return (
-            (t.src = this.model.getYoutubeSrc()),
-            (t.frameBorder = 0),
-            t.setAttribute("allowfullscreen", !0),
-            this.initVideoEl(t),
-            t
-          );
-        },
-      },
-      {
-        key: "renderYoutubeNoCookie",
-        value: function () {
-          var t = document.createElement("iframe");
-          return (
-            (t.src = this.model.getYoutubeNoCookieSrc()),
-            (t.frameBorder = 0),
-            t.setAttribute("allowfullscreen", !0),
-            this.initVideoEl(t),
-            t
-          );
-        },
-      },
-      {
-        key: "renderVimeo",
-        value: function () {
-          var t = document.createElement("iframe");
-          return (
-            (t.src = this.model.getVimeoSrc()),
-            (t.frameBorder = 0),
-            t.setAttribute("allowfullscreen", !0),
-            this.initVideoEl(t),
-            t
-          );
-        },
-      },
-      {
-        key: "initVideoEl",
-        value: function (t) {
-          (t.className = this.ppfx + "no-pointer"),
-            (t.style.height = "100%"),
-            (t.style.width = "100%");
-        },
-      },
-      {
-        key: "render",
-        value: function () {
-          for (
-            var t = arguments.length, e = new Array(t), n = 0;
-            n < t;
-            n++
-          )
-            e[n] = arguments[n];
-          pt.prototype.render.apply(this, e), this.updateClasses();
-          var r = this.model.get("provider");
-          return (
-            this.el.appendChild(this.renderByProvider(r)),
-            this.updateVideo(),
-            this
-          );
-        },
-      },
-    ]),
-    n
-  );
-})(pt);
+            return (
+              (0, c.Z)(n, [
+                {
+                  key: "tagName",
+                  value: function () {
+                    return "div";
+                  },
+                },
+                {
+                  key: "events",
+                  value: function () {
+                    return {};
+                  },
+                },
+                {
+                  key: "initialize",
+                  value: function (t) {
+                    s.Z.prototype.initialize.apply(this, arguments);
+                    var e = this.model,
+                      n = [
+                        "loop",
+                        "autoplay",
+                        "controls",
+                        "muted",     
+                        "preload",   
+                        "playsinline", 
+                        "color",
+                        "rel",
+                        "modestbranding",
+                        "poster",
+                      ],
+                      r = n
+                        .map(function (t) {
+                          return "change:".concat(t);
+                        })
+                        .join(" ");
+                    this.listenTo(e, "change:provider", this.updateProvider),
+                      this.listenTo(e, "change:src", this.updateSrc),
+                      this.listenTo(e, r, this.updateVideo);
+                  },
+                },
+                {
+                  key: "updateProvider",
+                  value: function () {
+                    var t = this.model.get("provider");
+                    (this.el.innerHTML = ""),
+                      this.el.appendChild(this.renderByProvider(t));
+                  },
+                },
+                {
+                  key: "updateSrc",
+                  value: function () {
+                    var t = this.model,
+                      e = this.videoEl;
+                    if (e) {
+                      var n = t.get("provider"),
+                        r = t.get("src");
+                      switch (n) {
+                        case "yt":
+                          r = t.getYoutubeSrc();
+                          break;
+                        case "ytnc":
+                          r = t.getYoutubeNoCookieSrc();
+                          break;
+                        case "vi":
+                          r = t.getVimeoSrc();
+                      }
+                      e.src = r;
+                    }
+                  },
+                },
+                {
+                  key: "updateVideo",
+                  value: function () {
+                    var t = this.model.get("provider"),
+                      e = this.videoEl,
+                      n = this.model;
+                    switch (t) {
+                      case "yt":
+                      case "ytnc":
+                      case "vi":
+                        this.model.trigger("change:videoId");
+                        break;
+                      default:
+                        (e.loop = n.get("loop")),
+                          (e.autoplay = n.get("autoplay")),
+                          (e.controls = n.get("controls")),
+                          (e.muted = n.get("muted"));
+                          (e.preload = n.get("preload"));
+                          (e.poster = n.get("poster"));
+                          if (n.get("playsinline")) {
+                            e.setAttribute("playsinline", "");
+                          } else {
+                            e.removeAttribute("playsinline");
+                          }
+                    }
+                  },
+                },
+                {
+                  key: "renderByProvider",
+                  value: function (t) {
+                    var e;
+                    switch (t) {
+                      case "yt":
+                        e = this.renderYoutube();
+                        break;
+                      case "ytnc":
+                        e = this.renderYoutubeNoCookie();
+                        break;
+                      case "vi":
+                        e = this.renderVimeo();
+                        break;
+                      default:
+                        e = this.renderSource();
+                    }
+                    return (this.videoEl = e), e;
+                  },
+                },
+                {
+                  key: "renderSource",
+                    value: function () {
+                      var t = document.createElement("video");
+                      t.src = this.model.get("src");
+                      
+                      // Set all HTML5 video attributes with defaults
+                      var model = this.model;
+                      t.muted = model.get("muted") || true;           // Default to muted
+                      t.autoplay = model.get("autoplay") || true;     // Default to autoplay
+                      t.controls = model.get("controls") || false;    // Default to no controls
+                      t.loop = model.get("loop") || false;
+                      t.preload = model.get("preload") || "auto";     // Default to auto preload
+                      
+                      // Set playsinline attribute
+                      if (model.get("playsinline") !== false) {
+                        t.setAttribute("playsinline", "");
+                      }
+                      
+                      // Set poster if available
+                      var poster = model.get("poster");
+                      if (poster) {
+                        t.poster = poster;
+                      }
+                      
+                      this.initVideoEl(t);
+                      return t;
+                  },
+                },
+                {
+                  key: "renderYoutube",
+                  value: function () {
+                    var t = document.createElement("iframe");
+                    return (
+                      (t.src = this.model.getYoutubeSrc()),
+                      (t.frameBorder = 0),
+                      t.setAttribute("allowfullscreen", !0),
+                      this.initVideoEl(t),
+                      t
+                    );
+                  },
+                },
+                {
+                  key: "renderYoutubeNoCookie",
+                  value: function () {
+                    var t = document.createElement("iframe");
+                    return (
+                      (t.src = this.model.getYoutubeNoCookieSrc()),
+                      (t.frameBorder = 0),
+                      t.setAttribute("allowfullscreen", !0),
+                      this.initVideoEl(t),
+                      t
+                    );
+                  },
+                },
+                {
+                  key: "renderVimeo",
+                  value: function () {
+                    var t = document.createElement("iframe");
+                    return (
+                      (t.src = this.model.getVimeoSrc()),
+                      (t.frameBorder = 0),
+                      t.setAttribute("allowfullscreen", !0),
+                      this.initVideoEl(t),
+                      t
+                    );
+                  },
+                },
+                {
+                  key: "initVideoEl",
+                  value: function (t) {
+                    (t.className = this.ppfx + "no-pointer"),
+                      (t.style.height = "100%"),
+                      (t.style.width = "100%");
+                  },
+                },
+                {
+                  key: "render",
+                  value: function () {
+                    for (
+                      var t = arguments.length, e = new Array(t), n = 0;
+                      n < t;
+                      n++
+                    )
+                      e[n] = arguments[n];
+                    pt.prototype.render.apply(this, e), this.updateClasses();
+                    var r = this.model.get("provider");
+                    return (
+                      this.el.appendChild(this.renderByProvider(r)),
+                      this.updateVideo(),
+                      this
+                    );
+                  },
+                },
+              ]),
+              n
+            );
+          })(pt);
           function Xt(t, e) {
             var n = Object.keys(t);
             if (Object.getOwnPropertySymbols) {
