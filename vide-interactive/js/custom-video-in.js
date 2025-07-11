@@ -914,8 +914,6 @@ async function generateInteractiveSlideshowHTML() {
       
       // Custom function to handle form responses
       function handleFormResponse(form, response) {
-        // You can customize how to display the response
-        // For example, show it in a div below the form
         var responseDiv = form.querySelector('.form-response');
         if (!responseDiv) {
           responseDiv = document.createElement('div');

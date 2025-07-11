@@ -415,6 +415,9 @@ function updateComponentsWithNewJson(editor) {
 }  
 
 function uploadExcelCsv() {
+  const uploadedFileName = localStorage.getItem('uploadedFileName');
+  console.log('Previously uploaded file name:', uploadedFileName);
+
   const modal = editor.Modal;
   const container = document.createElement('div');
 
@@ -422,6 +425,9 @@ function uploadExcelCsv() {
     <div style="padding: 10px;">
       <h4>Upload Excel / CSV File</h4>
       <input type="file" id="excelCsvInput" accept=".csv, .xlsx" />
+      <span id="existingFileInfo" style="margin-left: 10px; font-weight: bold; color: #555;">
+        ${uploadedFileName ? `Already added file: ${uploadedFileName}` : 'No file added'}
+      </span>
       <br><br>
       <button id="uploadExcelCsvBtn" style="padding: 5px 10px;">Add</button>
     </div>
@@ -443,7 +449,7 @@ function uploadExcelCsv() {
     const formData = new FormData();
     formData.append('file', file);
 
-    fetch('http://192.168.0.188:8080/api/excel/upload', {
+    fetch('http://localhost:8080/api/excel/upload', {
       method: 'POST',
       body: formData,
     })
@@ -455,19 +461,19 @@ function uploadExcelCsv() {
         alert('Upload successful!');
         console.log(data);
 
-        // Assuming `data` is just the ID like: 2
-        // If `data` is an object, update this line accordingly (e.g., data.id)
-        localStorage.setItem('uploadedFileId', data);
+        // Store filename and uploaded ID
+        localStorage.setItem('uploadedFileId', data); // or data.id if your response is { id: ..., filename: ... }
+        localStorage.setItem('uploadedFileName', file.name);
 
         modal.close();
       })
-
       .catch(error => {
         console.error('Error:', error);
         alert('Upload failed.');
       });
   };
 }
+
 
 
 editor.on('run:core:canvas-clear', () => {

@@ -113,6 +113,7 @@
                 droppable: ":not(form)",
                 draggable: ":not(form)",
                 attributes: { method: "get" },
+                'action-type': 'none',
                 traits: [
                   {
                     type: "select",
@@ -125,6 +126,76 @@
                   { name: "action" },
                 ],
               },
+              init: function() {
+                // Listen for changes to method and action-type
+                this.on('change:attributes:method', this.updateTraits);
+                this.on('change:action-type', this.updateActionAttribute);
+                
+                // Set initial traits based on method
+                this.updateTraits();
+              },
+              updateTraits: function() {
+                var method = this.get('attributes').method;
+                var actionType = this.get('action-type');
+                var baseTraits = [
+                  {
+                    type: "select",
+                    name: "method",
+                    options: [
+                      { value: "get", name: "GET" },
+                      { value: "post", name: "POST" },
+                    ],
+                  }
+                ];
+                
+                if (method === 'post') {
+                  // For POST method, show action-type first
+                  baseTraits.push({
+                    type: "select",
+                    name: "action-type",
+                    label: "Action Type",
+                    options: [
+                      { value: "none", name: "None" },
+                      { value: "api", name: "API Call" },
+                    ],
+                    changeProp: true
+                  });
+                  
+                  // Only show action field if action-type is not 'api'
+                  if (actionType !== 'api') {
+                    baseTraits.push({ name: "action" });
+                  }
+                } else {
+                  // For GET method, show only action (original behavior)
+                  baseTraits.push({ name: "action" });
+                  // Reset to none when method is not POST
+                  this.set('action-type', 'none');
+                }
+                
+                this.set('traits', baseTraits);
+              },
+              updateActionAttribute: function() {
+                var actionType = this.get('action-type');
+                var method = this.get('attributes').method;
+                var currentAction = this.get('attributes').action || '';
+                
+                if (method === 'post' && actionType === 'api') {
+                  var Id = localStorage.getItem('uploadedFileId');
+                  if (!Id) {
+                    alert('Please upload an Excel or CSV file first.');
+                    return;
+                  }
+                  var apiAction = 'http://localhost:8080/api/excel/query-full-row-form/' + Id;
+                  
+                  // Update the action attribute
+                  this.addAttributes({ action: apiAction });
+                } else if (actionType === 'none') {
+                  // Keep current action or set to empty if it was an API action
+                  if (currentAction.includes('localhost:8080/api/sample/')) {
+                    this.addAttributes({ action: '' });
+                  }
+                }
+              }
             },
             view: {
               events: {
