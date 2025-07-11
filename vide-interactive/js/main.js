@@ -252,7 +252,7 @@ function downloadPage() {
   const downloadAnchorNode = document.createElement('a');
   downloadAnchorNode.setAttribute("href", dataStr);
   downloadAnchorNode.setAttribute("download", pageName + ".json");
-  document.body.appendChild(downloadAnchorNode); // required for firefox
+  document.body.appendChild(downloadAnchorNode);
   downloadAnchorNode.click();
   downloadAnchorNode.remove();
   editor.Modal.close();
@@ -454,8 +454,14 @@ function uploadExcelCsv() {
       .then(data => {
         alert('Upload successful!');
         console.log(data);
+
+        // Assuming `data` is just the ID like: 2
+        // If `data` is an object, update this line accordingly (e.g., data.id)
+        localStorage.setItem('uploadedFileId', data);
+
         modal.close();
       })
+
       .catch(error => {
         console.error('Error:', error);
         alert('Upload failed.');

@@ -129,9 +129,59 @@
             view: {
               events: {
                 submit: function (e) {
-                  return e.preventDefault();
+                  e.preventDefault();
+                  // Only handle AJAX in preview/runtime mode
+                  if (!this.em || this.em.get('Commands').isActive('preview')) {
+                    this.handleFormSubmit(e);
+                  }
                 },
               },
+              handleFormSubmit: function(e) {
+                var form = e.target;
+                var action = form.getAttribute('action');
+                var method = form.getAttribute('method') || 'GET';
+                var formData = new FormData(form);
+                
+                // Convert FormData to object for easier handling
+                var data = {};
+                formData.forEach(function(value, key) {
+                  data[key] = value;
+                });
+                
+                // Make AJAX request
+                if (action) {
+                  var xhr = new XMLHttpRequest();
+                  xhr.open(method.toUpperCase(), action, true);
+                  
+                  xhr.onload = function() {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                      // Handle successful response
+                      console.log('Form submitted successfully:', xhr.responseText);
+                      // You can add custom handling here
+                      // For example, display success message or update UI
+                      form.dispatchEvent(new CustomEvent('formSubmitSuccess', {
+                        detail: { response: xhr.responseText }
+                      }));
+                    } else {
+                      console.error('Form submission failed:', xhr.status);
+                      form.dispatchEvent(new CustomEvent('formSubmitError', {
+                        detail: { status: xhr.status, response: xhr.responseText }
+                      }));
+                    }
+                  };
+                  
+                  xhr.onerror = function() {
+                    console.error('Network error during form submission');
+                  };
+                  
+                  if (method.toUpperCase() === 'POST') {
+                    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                    xhr.send(new URLSearchParams(data).toString());
+                  } else {
+                    xhr.send();
+                  }
+                }
+              }
             },
           }),
             t.addType(o, {

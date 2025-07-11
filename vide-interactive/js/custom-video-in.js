@@ -663,6 +663,8 @@ console.log("slide",slide)
 }
 
 async function generateInteractiveSlideshowHTML() { 
+  const uploadedId = localStorage.getItem('uploadedFileId');
+  console.log('Previously uploaded ID:', uploadedId);
   const iframe = document.querySelector('#editor iframe'); 
   const iframeDoc = iframe?.contentDocument || iframe?.contentWindow?.document; 
   const slideElements = iframeDoc?.querySelectorAll('[data-slide]'); 
@@ -808,6 +810,133 @@ async function generateInteractiveSlideshowHTML() {
   <script src="https://cdn.datatables.net/buttons/1.2.1/js/buttons.print.min.js"></script> 
   <script src="https://code.highcharts.com/highcharts.js"></script> 
   <script src="https://code.highcharts.com/modules/drilldown.js"></script> 
+  <script>
+    // Form submission handler
+    document.addEventListener('DOMContentLoaded', function() {
+      // Handle all form submissions
+      document.addEventListener('submit', function(e) {
+        var form = e.target;
+        if (form.tagName === 'FORM') {
+          e.preventDefault();
+          
+          var action = form.getAttribute('action');
+          var method = form.getAttribute('method') || 'GET';
+          var formData = new FormData(form);
+          
+          // Show loading indicator (optional)
+          var submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');
+          var originalText = '';
+          if (submitBtn) {
+            originalText = submitBtn.textContent || submitBtn.value;
+            if (submitBtn.tagName === 'BUTTON') {
+              submitBtn.textContent = 'Sending...';
+            } else {
+              submitBtn.value = 'Sending...';
+            }
+            submitBtn.disabled = true;
+          }
+          
+          // Convert FormData to object
+          var data = {};
+          formData.forEach(function(value, key) {
+            data[key] = value;
+          });
+          
+          // Make AJAX request
+          if (action) {
+            var xhr = new XMLHttpRequest();
+            xhr.open(method.toUpperCase(), action, true);
+            
+            xhr.onload = function() {
+              if (xhr.status >= 200 && xhr.status < 300) {
+                console.log('Form submitted successfully:', xhr.responseText);
+                
+                // Handle response - you can customize this part
+                try {
+                  var response = JSON.parse(xhr.responseText);
+                  // Display response in the form or elsewhere
+                  handleFormResponse(form, response);
+                } catch (e) {
+                  console.log('Response is not JSON:', xhr.responseText);
+                }
+                
+                // Trigger custom event
+                form.dispatchEvent(new CustomEvent('formSubmitSuccess', {
+                  detail: { response: xhr.responseText }
+                }));
+              } else {
+                console.error('Form submission failed:', xhr.status);
+                alert('Form submission failed. Please try again.');
+                
+                form.dispatchEvent(new CustomEvent('formSubmitError', {
+                  detail: { status: xhr.status, response: xhr.responseText }
+                }));
+              }
+              
+              // Reset button
+              if (submitBtn) {
+                if (submitBtn.tagName === 'BUTTON') {
+                  submitBtn.textContent = originalText;
+                } else {
+                  submitBtn.value = originalText;
+                }
+                submitBtn.disabled = false;
+              }
+            };
+            
+            xhr.onerror = function() {
+              console.error('Network error during form submission');
+              alert('Network error. Please check your connection.');
+              
+              // Reset button
+              if (submitBtn) {
+                if (submitBtn.tagName === 'BUTTON') {
+                  submitBtn.textContent = originalText;
+                } else {
+                  submitBtn.value = originalText;
+                }
+                submitBtn.disabled = false;
+              }
+            };
+            
+            if (method.toUpperCase() === 'POST') {
+              xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+              xhr.send(new URLSearchParams(data).toString());
+            } else {
+              // For GET requests, append data to URL
+              var params = new URLSearchParams(data).toString();
+              xhr.open('GET', action + (action.includes('?') ? '&' : '?') + params, true);
+              xhr.send();
+            }
+          }
+        }
+      });
+      
+      // Custom function to handle form responses
+      function handleFormResponse(form, response) {
+        // You can customize how to display the response
+        // For example, show it in a div below the form
+        var responseDiv = form.querySelector('.form-response');
+        if (!responseDiv) {
+          responseDiv = document.createElement('div');
+          responseDiv.className = 'form-response alert alert-success mt-3';
+          form.appendChild(responseDiv);
+        }
+        
+        // Display the response (customize as needed)
+        if (typeof response === 'object') {
+          responseDiv.innerHTML = '<strong>Success!</strong> ' + JSON.stringify(response);
+        } else {
+          responseDiv.innerHTML = '<strong>Success!</strong> Form submitted successfully.';
+        }
+        
+        // Auto-hide after 5 seconds
+        setTimeout(function() {
+          responseDiv.style.display = 'none';
+        }, 5000);
+      }
+    });
+  </script>
   <style> 
   html, body { 
     margin: 0; 
@@ -1125,12 +1254,14 @@ console.log("progressBar:", progressBar);
 const timeLabel = document.getElementById("timeLabel");
 console.log("timeLabel:", timeLabel);
 
+const ID = ${uploadedId};
+console.log("Id is: ", ID)
   
   // Video sync variables
   let currentVideo = null;
   let videoSyncMode = false;
   let videoStartTime = 0;
-  let slideDisplayStartTime = 0;
+  let slideDisplayStartTime = 0
   
   // Input validation variables
   let waitingForInput = false;
