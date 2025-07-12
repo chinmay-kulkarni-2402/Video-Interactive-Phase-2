@@ -456,8 +456,35 @@ document.body.style.overflow = "hidden";
     downloadBtn.style.border = "none";
     downloadBtn.style.cursor = "pointer";
     downloadBtn.style.transition = "background-color 0.3s ease, transform 0.3s ease"; // Smooth hover effect
+
+    const checkboxContainer = document.createElement("div");
+    checkboxContainer.style.display = "inline-flex";
+    checkboxContainer.style.alignItems = "center";
+    checkboxContainer.style.marginLeft = "20px";
+    
+    const thumbnailCheckbox = document.createElement("input");
+    thumbnailCheckbox.type = "checkbox";
+    thumbnailCheckbox.id = "hideThumbnails";
+    thumbnailCheckbox.style.marginRight = "8px";
+    thumbnailCheckbox.style.cursor = "pointer";
+    
+    const checkboxLabel = document.createElement("label");
+    checkboxLabel.htmlFor = "hideThumbnails";
+    checkboxLabel.textContent = "Hide Thumbnails";
+    checkboxLabel.style.cursor = "pointer";
+    checkboxLabel.style.fontSize = "14px";
+    checkboxLabel.style.color = "#333";
+    
+    checkboxContainer.appendChild(thumbnailCheckbox);
+    checkboxContainer.appendChild(checkboxLabel);
+
+    slidesContainer.appendChild(checkboxContainer);
+    slidesContainer.appendChild(downloadBtn);
+
+
     downloadBtn.onclick = () => {
-      generateInteractiveSlideshowHTML();
+      const hideThumbnails = document.getElementById("hideThumbnails").checked;
+      generateInteractiveSlideshowHTML(hideThumbnails);
     };
 
     // Add hover effect to the download button
@@ -662,7 +689,7 @@ console.log("slide",slide)
   switchSlide(currentSlideIndex);
 }
 
-async function generateInteractiveSlideshowHTML() { 
+async function generateInteractiveSlideshowHTML(hideThumbnails = false)  { 
   const uploadedId = localStorage.getItem('uploadedFileId');
   console.log('Previously uploaded ID:', uploadedId);
   const iframe = document.querySelector('#editor iframe'); 
@@ -693,13 +720,14 @@ async function generateInteractiveSlideshowHTML() {
     const height = parseFloat(computed.height); 
     const img = encodeURIComponent(el.innerHTML); 
     const transition = parseFloat(el.getAttribute("data-transition-duration")) || 0; 
-    const display = parseFloat(el.getAttribute("data-slide-timer")) || 5; 
+    const display = parseFloat(el.getAttribute("data-slide-timer")) || 1; 
     const type = el.getAttribute("data-transition-type") || "fade"; 
     const dir = el.getAttribute("data-transition-direction") || "left"; 
     const backgroundColor = computed.backgroundColor || "#fff"; 
     const isHidden = el.getAttribute("data-hide") === "true"; 
     const wordToHide = el.getAttribute("data-word-to-hide") || ""; 
     const slideInput = el.getAttribute("data-slide-input"); 
+
     
     // Check for video in slide
     const videoElement = el.querySelector('video');
@@ -916,8 +944,7 @@ async function generateInteractiveSlideshowHTML() {
       function handleFormResponse(form, response) {
         try {
           const formKey = form.getAttribute('id') || form.getAttribute('action') || 'global-form-response';
-          sessionStorage.setItem(\`formResponse:\${formKey}\`, JSON.stringify(response));
-          console.log('Stored response in sessionStorage with key:', \`formResponse:\${formKey}\`);
+          sessionStorage.setItem('formResponse', JSON.stringify(response));
         } catch (e) {
           console.error('Failed to store form response in sessionStorage:', e);
         }
@@ -1131,7 +1158,7 @@ async function generateInteractiveSlideshowHTML() {
     left: 0;
     width: 100%;
     height: 90px;
-    display: flex;
+    display: ${hideThumbnails ? 'none' : 'flex'}; 
     overflow-x: auto;
     padding: 10px 20px;
     opacity: 0;
@@ -1318,6 +1345,7 @@ let videoLoadTimeout = null;
     currentVideo.removeEventListener('canplay', onVideoCanPlay);
     currentVideo.removeEventListener('waiting', onVideoWaiting);
     currentVideo.removeEventListener('error', onVideoError);
+    currentVideo.removeEventListener('play', onVideoPlay);
     
     // Add event listeners
     currentVideo.addEventListener('loadedmetadata', onVideoLoaded);
@@ -1327,6 +1355,7 @@ let videoLoadTimeout = null;
     currentVideo.addEventListener('canplay', onVideoCanPlay);
     currentVideo.addEventListener('waiting', onVideoWaiting);
     currentVideo.addEventListener('error', onVideoError);
+    currentVideo.addEventListener('play', onVideoPlay);
     
     // Set video attributes to hide controls
     currentVideo.setAttribute('controls', false);
@@ -1381,21 +1410,21 @@ let videoLoadTimeout = null;
 }
   
   function onVideoTimeUpdate() {
-    // This helps ensure video stays in sync during playback
-    if (videoSyncMode && currentVideo && phase === 'display') {
-      const videoTime = currentVideo.currentTime;
-      const slideDisplayTime = slideDisplayStartTime + videoTime;
-      
-      // Small tolerance for sync differences
-      const tolerance = 0.1;
-      const expectedTime = elapsed - (getCurrentSlideStartTime() + slideData[current].transition);
-      
-      if (Math.abs(videoTime - expectedTime) > tolerance) {
-        // Sync video to slide timer
-        const targetVideoTime = Math.max(0, expectedTime);
-        if (targetVideoTime <= currentVideo.duration) {
-          currentVideo.currentTime = targetVideoTime;
-        }
+    // Only sync during active playback
+    if (!playing || !videoSyncMode || !currentVideo || phase !== 'display') return;
+    
+    const videoTime = currentVideo.currentTime;
+    const slideDisplayTime = slideDisplayStartTime + videoTime;
+    
+    // Small tolerance for sync differences
+    const tolerance = 0.1;
+    const expectedTime = elapsed - (getCurrentSlideStartTime() + slideData[current].transition);
+    
+    if (Math.abs(videoTime - expectedTime) > tolerance) {
+      // Sync video to slide timer only during playback
+      const targetVideoTime = Math.max(0, expectedTime);
+      if (targetVideoTime <= currentVideo.duration) {
+        currentVideo.currentTime = targetVideoTime;
       }
     }
   }
@@ -1443,6 +1472,20 @@ function onVideoError(e) {
   if (playing) {
     togglePlay();
     alert('Video failed to load. Slideshow paused.');
+  }
+}
+
+function onVideoPlay() {
+  // If video starts playing but slideshow is paused, update the UI
+  if (!playing && currentVideo && !currentVideo.paused) {
+    playing = true;
+    document.getElementById("playBtn").innerHTML = '<i class="fas fa-pause"></i>';
+    
+    // Start the animation loop if not running
+    if (!rafId) {
+      last = null;
+      rafId = requestAnimationFrame(run);
+    }
   }
 }
 
@@ -1504,18 +1547,19 @@ function hideLoadingIndicator() {
   }
   
   function syncVideoToSlideTime() {
-    if (!videoSyncMode || !currentVideo || phase !== 'display') return;
-    
-    const slideStartTime = getCurrentSlideStartTime() + slideData[current].transition;
-    const videoTime = elapsed - slideStartTime;
-    
-    if (videoTime >= 0 && videoTime <= currentVideo.duration) {
-      const timeDiff = Math.abs(currentVideo.currentTime - videoTime);
-      if (timeDiff > 0.1) { // Only sync if difference is significant
-        currentVideo.currentTime = videoTime;
-      }
+  // Only sync during active playback
+  if (!playing || !videoSyncMode || !currentVideo || phase !== 'display') return;
+  
+  const slideStartTime = getCurrentSlideStartTime() + slideData[current].transition;
+  const videoTime = elapsed - slideStartTime;
+  
+  if (videoTime >= 0 && videoTime <= currentVideo.duration) {
+    const timeDiff = Math.abs(currentVideo.currentTime - videoTime);
+    if (timeDiff > 0.1) { // Only sync if difference is significant
+      currentVideo.currentTime = videoTime;
     }
   }
+}
   
   function checkInputValidation() {
     if (!slideData[current].slideInput) return true;
@@ -1533,36 +1577,50 @@ function hideLoadingIndicator() {
     return true;
   }
 
-  function populateFormFromSessionStorage() {
+    function populateFormFromSessionStorage() {
   const slideElement = slides[current];
   const forms = slideElement.querySelectorAll('form');
-  
+
+  // Parse the stored response object from session storage
+  const storedDataStr = sessionStorage.getItem('formResponse');
+  if (!storedDataStr) return;
+
+  let storedData;
+  try {
+    storedData = JSON.parse(storedDataStr);
+  } catch (err) {
+    console.error('Invalid session data:', err);
+    return;
+  }
+
   forms.forEach(form => {
-    // Check if form has method="get" and no action or empty action
-    if (form.method.toLowerCase() === 'get' && (!form.action || form.action === '')) {
-      // Find all input fields in the form
+    const method = form.getAttribute('method')?.toLowerCase() || '';
+    const action = form.getAttribute('action') || '';
+
+    // Only populate forms with method="get" and no action
+    if (method === 'get' && action === '') {
       const inputs = form.querySelectorAll('input, textarea, select');
-      
+
       inputs.forEach(input => {
-        if (input.name) {
-          // Check if sessionStorage has a value for this field name
-          const storedValue = sessionStorage.getItem(input.name);
-          if (storedValue !== null) {
-            // Set the value based on input type
-            if (input.type === 'checkbox') {
-              input.checked = storedValue === 'true';
-            } else if (input.type === 'radio') {
-              if (input.value === storedValue) {
-                input.checked = true;
-              }
-            } else {
-              input.value = storedValue;
-            }
+        const key = input.name;
+        if (!key) return;
+
+        const value = storedData[key];
+        if (value === undefined || value === null) return;
+
+        if (input.type === 'checkbox') {
+          input.checked = value === 'true';
+        } else if (input.type === 'radio') {
+          if (input.value === value) {
+            input.checked = true;
           }
+        } else {
+          input.value = value;
         }
       });
     }
   });
+  sessionStorage.removeItem('formResponse');
 }
   
   function setupInputValidation() {
@@ -1670,7 +1728,7 @@ function showSlide(index) {
   const delta = (timestamp - last) / 1000; 
   last = timestamp; 
   
-  // Don't progress if waiting for input
+  // Don't progress if waiting for input or video is loading
   if (waitingForInput || videoLoading) {
     if (playing) rafId = requestAnimationFrame(run);
     return;
@@ -1695,7 +1753,6 @@ function showSlide(index) {
       // Start video playback when display phase begins
       if (videoSyncMode && currentVideo && playing) {
         currentVideo.currentTime = 0;
-        // Use requestAnimationFrame for smoother timing
         requestAnimationFrame(() => {
           currentVideo.play().catch(e => console.log('Video play failed:', e));
         });
@@ -1718,7 +1775,6 @@ function showSlide(index) {
       // Start video playback when display phase begins (transition just ended)
       if (videoSyncMode && currentVideo && playing) {
         currentVideo.currentTime = 0;
-        // Use requestAnimationFrame for smoother timing
         requestAnimationFrame(() => {
           currentVideo.play().catch(e => console.log('Video play failed:', e));
         });
@@ -1779,7 +1835,6 @@ function showSlide(index) {
     } 
   } 
   
- // Replace the existing seek function with this fixed version
 function seek(event) { 
   const rect = event.currentTarget.getBoundingClientRect(); 
   const percent = (event.clientX - rect.left) / rect.width; 
@@ -1793,6 +1848,17 @@ function seek(event) {
       // Pause current video before switching
       if (currentVideo) {
         currentVideo.pause();
+      }
+      
+      // Clear any input validation state when manually seeking
+      waitingForInput = false;
+      if (inputValidationListener) {
+        const oldSlideElement = slides[current];
+        const oldSubmitButton = oldSlideElement.querySelector('button[type="submit"], input[type="submit"]');
+        if (oldSubmitButton) {
+          oldSubmitButton.removeEventListener('click', inputValidationListener);
+        }
+        inputValidationListener = null;
       }
       
       current = i; 
@@ -1816,14 +1882,21 @@ function seek(event) {
         slides[current].style.opacity = 1;
         slides[current].style.transform = 'translate(-50%, -50%)';
         
-        // Sync video to correct position
+        // Setup video and resume playback if there's a video
         if (videoSyncMode && currentVideo) {
           const videoTime = slideTime - slideData[current].transition;
           if (videoTime >= 0 && videoTime <= currentVideo.duration) {
             currentVideo.currentTime = videoTime;
-            if (playing) {
-              currentVideo.play().catch(e => console.log('Video play failed:', e));
+            
+            // Resume playback and update UI
+            if (!playing) {
+              playing = true;
+              document.getElementById("playBtn").innerHTML = '<i class="fas fa-pause"></i>';
+              last = null;
+              rafId = requestAnimationFrame(run);
             }
+            
+            currentVideo.play().catch(e => console.log('Video play failed:', e));
           }
         }
       } 
@@ -1834,7 +1907,7 @@ function seek(event) {
     } 
     acc = slideEnd; 
   } 
-} 
+}
   
  function jumpToSlide(index) {
   if (index < 0 || index >= slideData.length) return;
@@ -1843,6 +1916,17 @@ function seek(event) {
   if (currentVideo) {
     currentVideo.pause();
     currentVideo.currentTime = 0;
+  }
+  
+  // Clear any input validation state when jumping to a new slide
+  waitingForInput = false;
+  if (inputValidationListener) {
+    const oldSlideElement = slides[current];
+    const oldSubmitButton = oldSlideElement.querySelector('button[type="submit"], input[type="submit"]');
+    if (oldSubmitButton) {
+      oldSubmitButton.removeEventListener('click', inputValidationListener);
+    }
+    inputValidationListener = null;
   }
   
   // Calculate the time at the start of the target slide
@@ -1866,16 +1950,22 @@ function seek(event) {
     slides[current].style.opacity = 1;
     slides[current].style.transform = 'translate(-50%, -50%)';
     
-    // Start video playback immediately when display phase begins
-    if (videoSyncMode && currentVideo && playing) {
+    // If there's a video on this slide, resume playback
+    if (videoSyncMode && currentVideo) {
       currentVideo.currentTime = 0;
-      // Use requestAnimationFrame for smoother start
+      
+      // Resume playback and update UI
+      if (!playing) {
+        playing = true;
+        document.getElementById("playBtn").innerHTML = '<i class="fas fa-pause"></i>';
+      }
+      
       requestAnimationFrame(() => {
         currentVideo.play().catch(e => console.log('Video play failed:', e));
       });
     }
     
-    // Check for input validation requirement
+    // Check for input validation requirement on the new slide
     setupInputValidation();
   } else {
     // Start transition from beginning - video will start after transition ends
@@ -1884,8 +1974,8 @@ function seek(event) {
   
   updateProgressUI();
   
-  // Resume animation if playing
-  if (playing && !rafId) {
+  // Resume animation if not already running
+  if (!rafId) {
     last = null;
     rafId = requestAnimationFrame(run);
   }
@@ -1896,14 +1986,19 @@ function seek(event) {
   let isMouseMoving = false;
   
   function showUI() {
-    document.querySelector('.controls').classList.add('visible');
-    document.getElementById('progressContainer').classList.add('visible');
-    document.getElementById('timeLabel').classList.add('visible');
-    document.getElementById('thumbnailContainer').classList.add('visible');
-    
-    clearTimeout(mouseTimeout);
-    mouseTimeout = setTimeout(hideUI, 3000);
+  document.querySelector('.controls').classList.add('visible');
+  document.getElementById('progressContainer').classList.add('visible');
+  document.getElementById('timeLabel').classList.add('visible');
+  
+  // Only show thumbnails if not hidden
+  const thumbnailContainer = document.getElementById('thumbnailContainer');
+  if (thumbnailContainer && thumbnailContainer.style.display !== 'none') {
+    thumbnailContainer.classList.add('visible');
   }
+  
+  clearTimeout(mouseTimeout);
+  mouseTimeout = setTimeout(hideUI, 3000);
+}
   
   function hideUI() {
     if (!isMouseMoving) {
