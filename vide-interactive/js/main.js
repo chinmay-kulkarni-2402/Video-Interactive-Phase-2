@@ -422,18 +422,16 @@ function uploadExcelCsv() {
   const container = document.createElement('div');
 
   container.innerHTML = `
-    <div style="padding: 10px;">
-      <h4>Upload Excel / CSV File</h4>
+    <div style="padding: 5px;">
+      <div> ${uploadedFileName ? `Already added file: ${uploadedFileName}` : 'No file added'}</div>
+      <br>
       <input type="file" id="excelCsvInput" accept=".csv, .xlsx" />
-      <span id="existingFileInfo" style="margin-left: 10px; font-weight: bold; color: #555;">
-        ${uploadedFileName ? `Already added file: ${uploadedFileName}` : 'No file added'}
-      </span>
       <br><br>
       <button id="uploadExcelCsvBtn" style="padding: 5px 10px;">Add</button>
     </div>
   `;
 
-  modal.setTitle('Upload Data File');
+  modal.setTitle('Upload Excel/CSV (Logic) File');
   modal.setContent(container);
   modal.open();
 

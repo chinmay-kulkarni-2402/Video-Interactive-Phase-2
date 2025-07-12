@@ -914,24 +914,13 @@ async function generateInteractiveSlideshowHTML() {
       
       // Custom function to handle form responses
       function handleFormResponse(form, response) {
-        var responseDiv = form.querySelector('.form-response');
-        if (!responseDiv) {
-          responseDiv = document.createElement('div');
-          responseDiv.className = 'form-response alert alert-success mt-3';
-          form.appendChild(responseDiv);
+        try {
+          const formKey = form.getAttribute('id') || form.getAttribute('action') || 'global-form-response';
+          sessionStorage.setItem(\`formResponse:\${formKey}\`, JSON.stringify(response));
+          console.log('Stored response in sessionStorage with key:', \`formResponse:\${formKey}\`);
+        } catch (e) {
+          console.error('Failed to store form response in sessionStorage:', e);
         }
-        
-        // Display the response (customize as needed)
-        if (typeof response === 'object') {
-          responseDiv.innerHTML = '<strong>Success!</strong> ' + JSON.stringify(response);
-        } else {
-          responseDiv.innerHTML = '<strong>Success!</strong> Form submitted successfully.';
-        }
-        
-        // Auto-hide after 5 seconds
-        setTimeout(function() {
-          responseDiv.style.display = 'none';
-        }, 5000);
       }
     });
   </script>
@@ -1260,6 +1249,9 @@ console.log("Id is: ", ID)
   let videoSyncMode = false;
   let videoStartTime = 0;
   let slideDisplayStartTime = 0
+  // Video loading state
+let videoLoading = false;
+let videoLoadTimeout = null;
   
   // Input validation variables
   let waitingForInput = false;
@@ -1284,6 +1276,7 @@ console.log("Id is: ", ID)
   let playing = true; 
   let last = null; 
   let rafId; 
+  
   
   function format(t) { 
     const m = Math.floor(t / 60).toString().padStart(2, '0'); 
@@ -1312,18 +1305,28 @@ console.log("Id is: ", ID)
   
   if (currentVideo && slideData[current].hasVideo) {
     videoSyncMode = true;
+    videoLoading = true; // Set loading state
+    
+    // Show loading indicator
+    showLoadingIndicator();
     
     // Remove existing event listeners to avoid duplicates
     currentVideo.removeEventListener('loadedmetadata', onVideoLoaded);
     currentVideo.removeEventListener('timeupdate', onVideoTimeUpdate);
     currentVideo.removeEventListener('ended', onVideoEnded);
     currentVideo.removeEventListener('contextmenu', preventContextMenu);
+    currentVideo.removeEventListener('canplay', onVideoCanPlay);
+    currentVideo.removeEventListener('waiting', onVideoWaiting);
+    currentVideo.removeEventListener('error', onVideoError);
     
     // Add event listeners
     currentVideo.addEventListener('loadedmetadata', onVideoLoaded);
     currentVideo.addEventListener('timeupdate', onVideoTimeUpdate);
     currentVideo.addEventListener('ended', onVideoEnded);
     currentVideo.addEventListener('contextmenu', preventContextMenu);
+    currentVideo.addEventListener('canplay', onVideoCanPlay);
+    currentVideo.addEventListener('waiting', onVideoWaiting);
+    currentVideo.addEventListener('error', onVideoError);
     
     // Set video attributes to hide controls
     currentVideo.setAttribute('controls', false);
@@ -1334,21 +1337,28 @@ console.log("Id is: ", ID)
     currentVideo.preload = 'auto';
     currentVideo.currentTime = 0;
     
+    // Set a timeout for video loading
+    videoLoadTimeout = setTimeout(() => {
+      if (videoLoading) {
+        console.error('Video loading timeout');
+        hideLoadingIndicator();
+        videoLoading = false;
+        // Optionally pause the slideshow
+        if (playing) {
+          togglePlay();
+          alert('Video loading failed. Slideshow paused.');
+        }
+      }
+    }, 30000); // 30 second timeout
+    
     // Ensure video is ready by calling load if needed
     if (currentVideo.readyState < 2) {
       currentVideo.load();
     }
-    
-    // Only play if we're in display phase and slideshow is playing
-    if (playing && phase === 'display') {
-      // Use requestAnimationFrame for better timing
-      requestAnimationFrame(() => {
-        currentVideo.play().catch(e => console.log('Video play failed:', e));
-      });
-    }
   } else {
     videoSyncMode = false;
     currentVideo = null;
+    videoLoading = false;
   }
 }
   
@@ -1394,6 +1404,96 @@ console.log("Id is: ", ID)
     // Video has ended, but slide timer might still be running
     // Let the slide timer continue normally
   }
+
+  function onVideoCanPlay() {
+  videoLoading = false;
+  hideLoadingIndicator();
+  
+  // Clear timeout
+  if (videoLoadTimeout) {
+    clearTimeout(videoLoadTimeout);
+    videoLoadTimeout = null;
+  }
+  
+  // If we're in display phase and playing, start video
+  if (playing && phase === 'display') {
+    requestAnimationFrame(() => {
+      currentVideo.play().catch(e => console.log('Video play failed:', e));
+    });
+  }
+}
+
+function onVideoWaiting() {
+  videoLoading = true;
+  showLoadingIndicator();
+}
+
+function onVideoError(e) {
+  console.error('Video error:', e);
+  videoLoading = false;
+  hideLoadingIndicator();
+  
+  // Clear timeout
+  if (videoLoadTimeout) {
+    clearTimeout(videoLoadTimeout);
+    videoLoadTimeout = null;
+  }
+  
+  // Pause slideshow on error
+  if (playing) {
+    togglePlay();
+    alert('Video failed to load. Slideshow paused.');
+  }
+}
+
+function showLoadingIndicator() {
+  let loader = document.getElementById('videoLoader');
+  if (!loader) {
+    loader = document.createElement('div');
+    loader.id = 'videoLoader';
+    loader.innerHTML = '<div class="spinner"></div><div>Loading video...</div>';
+    loader.style.cssText = \`
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.8);
+      color: white;
+      padding: 20px;
+      border-radius: 8px;
+      z-index: 10000;
+      text-align: center;
+    \`;
+    document.body.appendChild(loader);
+    
+    // Add spinner styles
+    const style = document.createElement('style');
+    style.textContent = \`
+      .spinner {
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #3498db;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 10px;
+      }
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    \`;
+    document.head.appendChild(style);
+  }
+  loader.style.display = 'block';
+}
+
+function hideLoadingIndicator() {
+  const loader = document.getElementById('videoLoader');
+  if (loader) {
+    loader.style.display = 'none';
+  }
+}
   
   function getCurrentSlideStartTime() {
     let time = 0;
@@ -1432,6 +1532,38 @@ console.log("Id is: ", ID)
     
     return true;
   }
+
+  function populateFormFromSessionStorage() {
+  const slideElement = slides[current];
+  const forms = slideElement.querySelectorAll('form');
+  
+  forms.forEach(form => {
+    // Check if form has method="get" and no action or empty action
+    if (form.method.toLowerCase() === 'get' && (!form.action || form.action === '')) {
+      // Find all input fields in the form
+      const inputs = form.querySelectorAll('input, textarea, select');
+      
+      inputs.forEach(input => {
+        if (input.name) {
+          // Check if sessionStorage has a value for this field name
+          const storedValue = sessionStorage.getItem(input.name);
+          if (storedValue !== null) {
+            // Set the value based on input type
+            if (input.type === 'checkbox') {
+              input.checked = storedValue === 'true';
+            } else if (input.type === 'radio') {
+              if (input.value === storedValue) {
+                input.checked = true;
+              }
+            } else {
+              input.value = storedValue;
+            }
+          }
+        }
+      });
+    }
+  });
+}
   
   function setupInputValidation() {
      console.log("current slide input", slideData[current].slideInput)
@@ -1496,6 +1628,9 @@ function showSlide(index) {
     }
   }); 
   
+  // Populate forms with sessionStorage data
+  populateFormFromSessionStorage();
+
   // Setup video sync for the new slide
   setupVideoSync();
   
@@ -1536,7 +1671,7 @@ function showSlide(index) {
   last = timestamp; 
   
   // Don't progress if waiting for input
-  if (waitingForInput) {
+  if (waitingForInput || videoLoading) {
     if (playing) rafId = requestAnimationFrame(run);
     return;
   }
@@ -1834,23 +1969,34 @@ function seek(event) {
   
   
   
-  // Initialize slideshow
-  function init() {
-    // Hide all video controls initially
-    hideAllVideoControls();
-    
-    // Show first slide
-    showSlide(0);
-    updateProgressUI();
-    
-    // Start slideshow
-    if (playing) {
-      last = null;
-      rafId = requestAnimationFrame(run);
-    }
-    
-    // Initial UI state
-    showUI();
+// Initialize slideshow
+function init() {
+  // Start with slideshow paused
+  playing = false;
+  document.getElementById("playBtn").innerHTML = '<i class="fas fa-play"></i>';
+  
+  // Hide all video controls initially
+  hideAllVideoControls();
+  
+  // Show first slide
+  showSlide(0);
+  
+  // Render the first slide at full opacity if no transition
+  if (slideData[0].transition === 0) {
+    slides[0].style.opacity = 1;
+    slides[0].style.transform = 'translate(-50%, -50%)';
+  } else {
+    // Show first frame of transition
+    renderTransition(0);
+  }
+  
+  updateProgressUI();
+  
+  // Don't start the animation loop automatically
+  // User must press play to start
+  
+  // Initial UI state
+  showUI();
 }
   
   // Start when DOM is ready

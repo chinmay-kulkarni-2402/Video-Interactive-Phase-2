@@ -185,13 +185,17 @@
                     alert('Please upload an Excel or CSV file first.');
                     return;
                   }
-                  var apiAction = 'http://localhost:8080/api/excel/query-full-row-form/' + Id;
+                  
+                  // This is the API key which is responsible for sending data to backend 
+                  // When user clicks on button for logic This API will get called (Service Call)
+                  // Need to change Actual Api here
+                  var apiAction = 'http://localhost:8080/api/excel/query-full-row-form/' + Id; 
                   
                   // Update the action attribute
                   this.addAttributes({ action: apiAction });
                 } else if (actionType === 'none') {
                   // Keep current action or set to empty if it was an API action
-                  if (currentAction.includes('localhost:8080/api/sample/')) {
+                  if (currentAction.includes(apiAction)) {
                     this.addAttributes({ action: '' });
                   }
                 }
