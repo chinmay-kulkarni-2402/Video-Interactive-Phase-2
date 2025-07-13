@@ -1620,7 +1620,7 @@ function hideLoadingIndicator() {
       });
     }
   });
-  sessionStorage.removeItem('formResponse');
+  
 }
   
   function setupInputValidation() {

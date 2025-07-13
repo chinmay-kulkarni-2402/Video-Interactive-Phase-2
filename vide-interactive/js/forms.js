@@ -71,6 +71,91 @@
             u.apply(this, arguments)
           );
         };
+
+      // Shared API functions to avoid duplication
+      var apiHelpers = {
+        loadExcelHeaders: function(component) {
+          var uploadId = localStorage.getItem('uploadedFileId');
+          
+          if (!uploadId) {
+            alert('Please upload an Excel or CSV file first.');
+            component.set('input-type', 'none');
+            component.updateTraitsForInputType();
+            return;
+          }
+          
+          var xhr = new XMLHttpRequest();
+          xhr.open('GET', 'http://localhost:8080/api/excel/headers?uploadId=' + uploadId, true);
+          
+          xhr.onload = function() {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              try {
+                var response = JSON.parse(xhr.responseText);
+                var headers = response.map(function(header) {
+                  return { value: header, name: header };
+                });
+                headers.unshift({ value: "", name: "Select Header" });
+                
+                component.set('excel-headers', headers);
+                component.updateTraitsForInputType();
+              } catch (e) {
+                console.error('Error parsing headers response:', e);
+              }
+            }
+          };
+          
+          xhr.send();
+        },
+        
+        loadUniqueValues: function(component, columnName) {
+          var uploadId = localStorage.getItem('uploadedFileId');
+          
+          if (!uploadId || !columnName) return;
+          
+          console.log('Loading unique values for column:', columnName);
+          
+          var xhr = new XMLHttpRequest();
+          xhr.open('GET', 'http://localhost:8080/api/excel/unique-values?uploadId=' + uploadId + '&columnName=' + encodeURIComponent(columnName), true);
+          
+          xhr.onload = function() {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              try {
+                var response = JSON.parse(xhr.responseText);
+                console.log('Unique values response:', response);
+                
+                var uniqueValues = response.map(function(value) {
+                  return { value: value, name: value };
+                });
+                
+                component.set('unique-values', uniqueValues);
+                console.log('Set unique values:', uniqueValues);
+                
+                // For select components, force update the traits
+                if (component.get('tagName') === 'select') {
+                  // Reset selected values when new unique values are loaded
+                  component.set('selected-values', []);
+                  
+                  // Update traits to refresh the unique values selector
+                  component.updateTraitsForInputType();
+                } else {
+                  component.updateTraitsForInputType();
+                }
+              } catch (e) {
+                console.error('Error parsing unique values response:', e);
+              }
+            } else {
+              console.error('Failed to load unique values:', xhr.status, xhr.responseText);
+            }
+          };
+          
+          xhr.onerror = function() {
+            console.error('Network error loading unique values');
+          };
+          
+          xhr.send();
+        }
+      };
+
       const m = function (e, t) {
         void 0 === t && (t = {});
         var m = u(
@@ -103,6 +188,171 @@
             v = function (t) {
               e.Commands.isActive("preview") || t.preventDefault();
             };
+
+          // Shared function to create API-enabled traits for components that have name/value
+          var createInputTypeTraitsWithValue = function(originalTraits) {
+            return function() {
+              var inputType = this.get('input-type');
+              var baseTraits = [
+                {
+                  type: "select",
+                  name: "input-type",
+                  label: "Input Type",
+                  options: [
+                    { value: "none", name: "None" },
+                    { value: "api", name: "API" },
+                  ],
+                  changeProp: true
+                }
+              ];
+              
+              if (inputType === 'api') {
+                // For API type, replace name and value with dropdowns but keep other traits
+                var apiTraits = originalTraits.filter(function(trait) {
+                  return trait.name !== 'name' && trait.name !== 'value';
+                });
+                
+                // Add API dropdown traits
+                baseTraits.push(
+                  {
+                    type: "select",
+                    name: "name",
+                    label: "Name",
+                    options: this.get('excel-headers') || [{ value: "", name: "Loading headers..." }],
+                    changeProp: true
+                  },
+                  {
+                    type: "select", 
+                    name: "value",
+                    label: "Value",
+                    options: this.get('unique-values') || [{ value: "", name: "Select header first..." }],
+                    changeProp: true
+                  }
+                );
+                
+                baseTraits = baseTraits.concat(apiTraits);
+                
+                // Load headers if not already loaded
+                if (!this.get('excel-headers') || this.get('excel-headers').length === 0) {
+                  console.log('Loading Excel headers for component');
+                  apiHelpers.loadExcelHeaders(this);
+                }
+              } else {
+                // For None type, show original traits
+                baseTraits = baseTraits.concat(originalTraits);
+              }
+              
+              this.set('traits', baseTraits);
+            };
+          };
+
+          // Shared function to create API-enabled traits for components that DON'T have value
+          var createInputTypeTraitsWithoutValue = function(originalTraits) {
+            return function() {
+              var inputType = this.get('input-type');
+              var baseTraits = [
+                {
+                  type: "select",
+                  name: "input-type",
+                  label: "Input Type",
+                  options: [
+                    { value: "none", name: "None" },
+                    { value: "api", name: "API" },
+                  ],
+                  changeProp: true
+                }
+              ];
+              
+              if (inputType === 'api') {
+                // For API type, replace name with dropdown but keep other traits
+                var apiTraits = originalTraits.filter(function(trait) {
+                  return trait.name !== 'name';
+                });
+                
+                // Add API dropdown traits
+                baseTraits.push({
+                  type: "select",
+                  name: "name",
+                  label: "Name",
+                  options: this.get('excel-headers') || [{ value: "", name: "Loading headers..." }],
+                  changeProp: true
+                });
+                
+                baseTraits = baseTraits.concat(apiTraits);
+                
+                // Load headers if not already loaded
+                if (!this.get('excel-headers') || this.get('excel-headers').length === 0) {
+                  console.log('Loading Excel headers for component');
+                  apiHelpers.loadExcelHeaders(this);
+                }
+              } else {
+                // For None type, show original traits
+                baseTraits = baseTraits.concat(originalTraits);
+              }
+              
+              this.set('traits', baseTraits);
+            };
+          };
+
+          // Shared function for API components initialization with value
+          var initApiComponentWithValue = function() {
+            this.on('change:input-type', this.updateTraitsForInputType);
+            
+            // Listen for name changes to load unique values AND update HTML name attribute
+            this.on('change:name', function() {
+              var inputType = this.get('input-type');
+              var selectedName = this.get('name');
+              
+              console.log('Name changed:', selectedName, 'Input type:', inputType);
+              
+              if (inputType === 'api' && selectedName) {
+                // Update HTML name attribute
+                this.addAttributes({ name: selectedName });
+                console.log('Updated HTML name attribute to:', selectedName);
+                
+                // Load unique values for this header
+                apiHelpers.loadUniqueValues(this, selectedName);
+              }
+            });
+            
+            // Listen for value changes to update HTML value attribute
+            this.on('change:value', function() {
+              var inputType = this.get('input-type');
+              var selectedValue = this.get('value');
+              
+              console.log('Value changed:', selectedValue, 'Input type:', inputType);
+              
+              if (inputType === 'api' && selectedValue) {
+                // Update HTML value attribute
+                this.addAttributes({ value: selectedValue });
+                console.log('Updated HTML value attribute to:', selectedValue);
+              }
+            });
+            
+            this.updateTraitsForInputType();
+          };
+
+          // Shared function for API components initialization without value
+          var initApiComponentWithoutValue = function() {
+            this.on('change:input-type', this.updateTraitsForInputType);
+            
+            // Listen for name changes to update HTML name attribute
+            this.on('change:name', function() {
+              var inputType = this.get('input-type');
+              var selectedName = this.get('name');
+              
+              console.log('Name changed:', selectedName, 'Input type:', inputType);
+              
+              if (inputType === 'api' && selectedName) {
+                // Update HTML name attribute
+                this.addAttributes({ name: selectedName });
+                console.log('Updated HTML name attribute to:', selectedName);
+              }
+            });
+            
+            this.updateTraitsForInputType();
+          };
+
           t.addType(n, {
             isComponent: function (e) {
               return "FORM" == e.tagName;
@@ -127,11 +377,8 @@
                 ],
               },
               init: function() {
-                // Listen for changes to method and action-type
                 this.on('change:attributes:method', this.updateTraits);
                 this.on('change:action-type', this.updateActionAttribute);
-                
-                // Set initial traits based on method
                 this.updateTraits();
               },
               updateTraits: function() {
@@ -149,7 +396,6 @@
                 ];
                 
                 if (method === 'post') {
-                  // For POST method, show action-type first
                   baseTraits.push({
                     type: "select",
                     name: "action-type",
@@ -161,14 +407,11 @@
                     changeProp: true
                   });
                   
-                  // Only show action field if action-type is not 'api'
                   if (actionType !== 'api') {
                     baseTraits.push({ name: "action" });
                   }
                 } else {
-                  // For GET method, show only action (original behavior)
                   baseTraits.push({ name: "action" });
-                  // Reset to none when method is not POST
                   this.set('action-type', 'none');
                 }
                 
@@ -177,7 +420,6 @@
               updateActionAttribute: function() {
                 var actionType = this.get('action-type');
                 var method = this.get('attributes').method;
-                var currentAction = this.get('attributes').action || '';
                 
                 if (method === 'post' && actionType === 'api') {
                   var Id = localStorage.getItem('uploadedFileId');
@@ -186,16 +428,11 @@
                     return;
                   }
                   
-                  // This is the API key which is responsible for sending data to backend 
-                  // When user clicks on button for logic This API will get called (Service Call)
-                  // Need to change Actual Api here
                   var apiAction = 'http://localhost:8080/api/excel/query-full-row-form/' + Id; 
-                  
-                  // Update the action attribute
                   this.addAttributes({ action: apiAction });
                 } else if (actionType === 'none') {
-                  // Keep current action or set to empty if it was an API action
-                  if (currentAction.includes(apiAction)) {
+                  var currentAction = this.get('attributes').action || '';
+                  if (currentAction.includes('localhost:8080/api/excel')) {
                     this.addAttributes({ action: '' });
                   }
                 }
@@ -205,7 +442,6 @@
               events: {
                 submit: function (e) {
                   e.preventDefault();
-                  // Only handle AJAX in preview/runtime mode
                   if (!this.em || this.em.get('Commands').isActive('preview')) {
                     this.handleFormSubmit(e);
                   }
@@ -217,23 +453,18 @@
                 var method = form.getAttribute('method') || 'GET';
                 var formData = new FormData(form);
                 
-                // Convert FormData to object for easier handling
                 var data = {};
                 formData.forEach(function(value, key) {
                   data[key] = value;
                 });
                 
-                // Make AJAX request
                 if (action) {
                   var xhr = new XMLHttpRequest();
                   xhr.open(method.toUpperCase(), action, true);
                   
                   xhr.onload = function() {
                     if (xhr.status >= 200 && xhr.status < 300) {
-                      // Handle successful response
                       console.log('Form submitted successfully:', xhr.responseText);
-                      // You can add custom handling here
-                      // For example, display success message or update UI
                       form.dispatchEvent(new CustomEvent('formSubmitSuccess', {
                         detail: { response: xhr.responseText }
                       }));
@@ -269,7 +500,20 @@
                   droppable: !1,
                   highlightable: !1,
                   attributes: { type: "text" },
+                  'input-type': 'none',
+                  'excel-headers': [],
+                  'unique-values': [],
                   traits: [
+                    {
+                      type: "select",
+                      name: "input-type",
+                      label: "Input Type",
+                      options: [
+                        { value: "none", name: "None" },
+                        { value: "api", name: "API" },
+                      ],
+                      changeProp: true
+                    },
                     d,
                     u,
                     {
@@ -285,6 +529,17 @@
                     m,
                   ],
                 },
+                init: initApiComponentWithoutValue,
+                updateTraitsForInputType: createInputTypeTraitsWithoutValue([d, u, {
+                  type: "select",
+                  name: "type",
+                  options: [
+                    { value: "text" },
+                    { value: "email" },
+                    { value: "password" },
+                    { value: "number" },
+                  ],
+                }, m])
               },
               extendFnView: ["updateAttributes"],
               view: {
@@ -302,8 +557,27 @@
                 defaults: {
                   tagName: "textarea",
                   attributes: {},
-                  traits: [d, u, m],
+                  'input-type': 'none',
+                  'excel-headers': [],
+                  'unique-values': [],
+                  traits: [
+                    {
+                      type: "select",
+                      name: "input-type",
+                      label: "Input Type",
+                      options: [
+                        { value: "none", name: "None" },
+                        { value: "api", name: "API" },
+                      ],
+                      changeProp: true
+                    },
+                    d, 
+                    u, 
+                    m
+                  ],
                 },
+                init: initApiComponentWithoutValue,
+                updateTraitsForInputType: createInputTypeTraitsWithoutValue([d, u, m])
               },
             }),
             t.addType(l, {
@@ -329,8 +603,163 @@
                 defaults: {
                   tagName: "select",
                   components: [h("opt1", "Option 1"), h("opt2", "Option 2")],
-                  traits: [d, { name: "options", type: "select-options" }, m],
+                  'input-type': 'none',
+                  'excel-headers': [],
+                  'unique-values': [],
+                  'selected-values': [],
+                  traits: [
+                    {
+                      type: "select",
+                      name: "input-type",
+                      label: "Input Type",
+                      options: [
+                        { value: "none", name: "None" },
+                        { value: "api", name: "API" },
+                      ],
+                      changeProp: true
+                    },
+                    d, 
+                    { name: "options", type: "select-options" }, 
+                    m
+                  ],
                 },
+                init: function() {
+                  this.on('change:input-type', this.updateTraitsForInputType);
+                  
+                  // Listen for name changes to load unique values
+                  this.on('change:name', function() {
+                    var inputType = this.get('input-type');
+                    var selectedName = this.get('name');
+                    
+                    console.log('Select name changed:', selectedName, 'Input type:', inputType);
+                    
+                    if (inputType === 'api' && selectedName) {
+                      // Update HTML name attribute
+                      this.addAttributes({ name: selectedName });
+                      console.log('Updated HTML name attribute to:', selectedName);
+                      
+                      // Reset selected values when header changes
+                      this.set('selected-values', []);
+                      
+                      // Load unique values for this header
+                      apiHelpers.loadUniqueValues(this, selectedName);
+                    }
+                  });
+                  
+                  // Listen for unique values changes to trigger trait re-render
+                  this.on('change:unique-values', function() {
+                    console.log('Unique values changed, triggering trait update');
+                    var inputType = this.get('input-type');
+                    if (inputType === 'api') {
+                      // Force refresh traits to update the unique-values-selector
+                      this.updateTraitsForInputType();
+                      
+                      // Also trigger the trait manager to re-render
+                      setTimeout(function() {
+                        if (this.em && this.em.get('TraitManager')) {
+                          var traitManager = this.em.get('TraitManager');
+                          if (traitManager.getTraitsViewer) {
+                            var viewer = traitManager.getTraitsViewer();
+                            if (viewer && viewer.render) {
+                              viewer.render();
+                            }
+                          }
+                        }
+                      }.bind(this), 50);
+                    }
+                  });
+                  
+                  // Listen for selected values changes to update HTML options
+                  this.on('change:selected-values', function() {
+                    var inputType = this.get('input-type');
+                    
+                    if (inputType === 'api') {
+                      this.updateSelectOptions();
+                    }
+                  });
+                  
+                  this.updateTraitsForInputType();
+                },
+                updateTraitsForInputType: function() {
+                  var inputType = this.get('input-type');
+                  var baseTraits = [
+                    {
+                      type: "select",
+                      name: "input-type",
+                      label: "Input Type",
+                      options: [
+                        { value: "none", name: "None" },
+                        { value: "api", name: "API" },
+                      ],
+                      changeProp: true
+                    }
+                  ];
+                  
+                  if (inputType === 'api') {
+                    // For API type, show name dropdown and unique values selector
+                    baseTraits.push(
+                      {
+                        type: "select",
+                        name: "name",
+                        label: "Name",
+                        options: this.get('excel-headers') || [{ value: "", name: "Loading headers..." }],
+                        changeProp: true
+                      },
+                      {
+                        type: "unique-values-selector",
+                        name: "selected-values",
+                        label: "Options",
+                        uniqueValues: this.get('unique-values') || [],
+                        changeProp: true
+                      },
+                      m
+                    );
+                    
+                    // Load headers if not already loaded
+                    if (!this.get('excel-headers') || this.get('excel-headers').length === 0) {
+                      console.log('Loading Excel headers for select component');
+                      apiHelpers.loadExcelHeaders(this);
+                    }
+                  } else {
+                    // For None type, show original traits
+                    baseTraits.push(
+                      d, 
+                      { name: "options", type: "select-options" }, 
+                      m
+                    );
+                  }
+                  
+                  this.set('traits', baseTraits);
+                  
+                  // Force refresh the trait manager if it exists
+                  if (this.em && this.em.get('TraitManager')) {
+                    var traitManager = this.em.get('TraitManager');
+                    if (traitManager.getTraitsViewer) {
+                      var viewer = traitManager.getTraitsViewer();
+                      if (viewer && viewer.updatedCollection) {
+                        viewer.updatedCollection();
+                      }
+                    }
+                  }
+                },
+                updateSelectOptions: function() {
+                  var selectedValues = this.get('selected-values') || [];
+                  var newOptions = [];
+                  
+                  // Create option components for each selected value
+                  for (var i = 0; i < selectedValues.length; i++) {
+                    var value = selectedValues[i];
+                    newOptions.push({
+                      type: l,
+                      content: value,
+                      attributes: { value: value }
+                    });
+                  }
+                  
+                  // Update the select component's children
+                  this.components().reset(newOptions);
+                  this.view && this.view.render();
+                }
               },
               view: { events: { mousedown: v } },
             }),
@@ -343,7 +772,20 @@
                 defaults: {
                   copyable: !1,
                   attributes: { type: "checkbox" },
+                  'input-type': 'none',
+                  'excel-headers': [],
+                  'unique-values': [],
                   traits: [
+                    {
+                      type: "select",
+                      name: "input-type",
+                      label: "Input Type",
+                      options: [
+                        { value: "none", name: "None" },
+                        { value: "api", name: "API" },
+                      ],
+                      changeProp: true
+                    },
                     { name: "id" },
                     d,
                     { name: "value" },
@@ -351,6 +793,8 @@
                     { type: "checkbox", name: "checked" },
                   ],
                 },
+                init: initApiComponentWithValue,
+                updateTraitsForInputType: createInputTypeTraitsWithValue([{ name: "id" }, d, { name: "value" }, m, { type: "checkbox", name: "checked" }])
               },
               view: {
                 events: { click: v },
@@ -424,7 +868,9 @@
                 defaults: {
                   tagName: "label",
                   components: "Label",
-                  traits: [{ name: "for" }],
+                  traits: [
+                    { name: "for" }
+                  ],
                 },
               },
             });
@@ -469,6 +915,130 @@
                 }
                 return this.$input;
               },
+            });
+
+            // Add custom trait type for unique values selector with checkboxes
+            e.TraitManager.addType("unique-values-selector", {
+              templateInput: function() {
+                return '<div class="unique-values-container"></div>';
+              },
+              
+              onRender: function() {
+                console.log('Trait onRender called');
+                this.updateContent();
+                
+                // Listen for changes to unique-values on the target
+                this.listenTo(this.target, 'change:unique-values', function() {
+                  console.log('Target unique-values changed, updating content');
+                  this.updateContent();
+                });
+              },
+              
+              updateContent: function() {
+                var target = this.target;
+                var uniqueValues = target.get('unique-values') || [];
+                var selectedValues = target.get('selected-values') || [];
+                var container = this.el.querySelector('.unique-values-container');
+                
+                console.log('updateContent called with unique values:', uniqueValues);
+                
+                if (!container) {
+                  console.log('Container not found');
+                  return;
+                }
+                
+                // Clear existing content
+                container.innerHTML = '';
+                container.style.cssText = 'max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 5px; width: 72.5%; ';
+                
+                if (uniqueValues.length === 0) {
+                  container.innerHTML = '<div style="padding: 10px;">Select a header first...</div>';
+                  return;
+                }
+                
+                console.log('Rendering', uniqueValues.length, 'unique values');
+                
+                var trait = this;
+                
+                // Create checkboxes for each unique value
+                uniqueValues.forEach(function(valueObj, index) {
+                  if (!valueObj.value) return; // Skip empty values
+                  
+                  var checkboxContainer = document.createElement('div');
+                  checkboxContainer.style.cssText = 'display: flex; align-items: center; padding: 3px 0; justify-content: space-between;';
+                  
+                  var leftDiv = document.createElement('div');
+                  leftDiv.style.cssText = 'display: flex; align-items: center;';
+                  
+                  var checkbox = document.createElement('input');
+                  checkbox.type = 'checkbox';
+                  checkbox.value = valueObj.value;
+                  checkbox.id = 'checkbox_' + index;
+                  checkbox.style.cssText = 'margin-right: 5px;';
+                  
+                  // Check if this value is already selected
+                  checkbox.checked = selectedValues.indexOf(valueObj.value) !== -1;
+                  
+                  var label = document.createElement('label');
+                  label.htmlFor = checkbox.id;
+                  label.textContent = valueObj.name || valueObj.value;
+                  label.style.cssText = 'cursor: pointer; font-size: 12px;';
+                  
+                  leftDiv.appendChild(checkbox);
+                  leftDiv.appendChild(label);
+                  
+                  // Add number indicator
+                  var numberSpan = document.createElement('span');
+                  numberSpan.style.cssText = 'background: #007cba;  border-radius: 10px; padding: 2px 6px; font-size: 10px; min-width: 16px; text-align: center;';
+                  var currentIndex = selectedValues.indexOf(valueObj.value);
+                  numberSpan.textContent = currentIndex !== -1 ? (currentIndex + 1) : '';
+                  numberSpan.id = 'number_' + index;
+                  
+                  checkboxContainer.appendChild(leftDiv);
+                  checkboxContainer.appendChild(numberSpan);
+                  
+                  // Add change event listener
+                  checkbox.addEventListener('change', function() {
+                    var currentSelected = target.get('selected-values') || [];
+                    var newSelected = [];
+                    
+                    if (this.checked) {
+                      // Add to selected values
+                      newSelected = currentSelected.concat([this.value]);
+                    } else {
+                      // Remove from selected values
+                      newSelected = currentSelected.filter(function(val) {
+                        return val !== checkbox.value;
+                      });
+                    }
+                    
+                    console.log('Updating selected values:', newSelected);
+                    target.set('selected-values', newSelected);
+                    
+                    // Update all number indicators
+                    trait.updateNumberIndicators(container, newSelected);
+                  });
+                  
+                  container.appendChild(checkboxContainer);
+                });
+              },
+              
+              updateNumberIndicators: function(container, selectedValues) {
+                var checkboxes = container.querySelectorAll('input[type="checkbox"]');
+                checkboxes.forEach(function(checkbox, index) {
+                  var numberSpan = container.querySelector('#number_' + index);
+                  if (numberSpan) {
+                    var valueIndex = selectedValues.indexOf(checkbox.value);
+                    numberSpan.textContent = valueIndex !== -1 ? (valueIndex + 1) : '';
+                  }
+                });
+              },
+              
+              onValueChange: function() {
+                // This gets called when the target's selected-values change
+                console.log('onValueChange called');
+                this.updateContent();
+              }
             });
           })(e),
           (function (e, t) {
@@ -568,4 +1138,4 @@
       };
       return t;
     })()
-);
+  );

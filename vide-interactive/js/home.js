@@ -44928,8 +44928,7 @@
                           viUrl: "https://player.vimeo.com/video/",
                           loop: 0,
                           poster: "",
-                          muted: 1,
-                          autoplay: 1,
+                          muted: 0,
                           controls: 0,
                           preload: "auto",
                           playsinline: 1,
@@ -45000,7 +44999,7 @@
                         case Wt:
                           this.set("videoId", e.pathname.split("/").pop()),
                             n.list && this.set("list", n.list),
-                            qt(n.autoplay) && this.set("autoplay", 1),
+                            qt(n.muted) && this.set("muted", 0),
                             qt(n.loop) && this.set("loop", 1),
                             0 === parseInt(n.controls) &&
                             this.set("controls", 0),
@@ -45046,9 +45045,8 @@
                           break;
                         default:
                           this.get("loop") && (r.loop = "loop"),
-                          this.get("autoplay") && (r.autoplay = "autoplay"),
-                          this.get("controls") && (r.controls = "controls"),
                           this.get("muted") && (r.muted = "muted"),
+                          this.get("controls") && (r.controls = "controls"),
                           this.get("preload") && (r.preload = this.get("preload")),
                           this.get("playsinline") && (r.playsinline = "playsinline");
                       }
@@ -45088,10 +45086,9 @@
                           name: "poster",
                           placeholder: "eg. ./media/image.jpg",
                         },
-                        this.getAutoplayTrait(),
+                        this.getmutedTrait(),
                         this.getLoopTrait(),
-                        this.getControlsTrait(),
-                        this.getMutedTrait(),    
+                        this.getControlsTrait(),   
                         this.getPreloadTrait(),   
                         this.getPlaysinlineTrait() 
                       ];
@@ -45108,7 +45105,7 @@
                           placeholder: "eg. jNQXAC9IVRw",
                           changeProp: 1,
                         },
-                        this.getAutoplayTrait(),
+                        this.getmutedTrait(),
                         this.getLoopTrait(),
                         this.getControlsTrait(),
                         {
@@ -45143,18 +45140,18 @@
                           placeholder: "eg. FF0000",
                           changeProp: 1,
                         },
-                        this.getAutoplayTrait(),
+                        this.getmutedTrait(),
                         this.getLoopTrait(),
                       ];
                     },
                   },
                   {
-                    key: "getAutoplayTrait",
+                    key: "getmutedTrait",
                     value: function () {
                       return {
                         type: "checkbox",
-                        label: "Autoplay",
-                        name: "autoplay",
+                        label: "muted",
+                        name: "muted",
                         changeProp: 1,
                       };
                     },
@@ -45181,17 +45178,6 @@
                       };
                     },
                   },
-                  {
-                  key: "getMutedTrait",
-                  value: function () {
-                    return {
-                      type: "checkbox",
-                      label: "Muted",
-                      name: "muted",
-                      changeProp: 1,
-                    };
-                  },
-                },
                 {
                   key: "getPreloadTrait",
                   value: function () {
@@ -45228,7 +45214,6 @@
                       return (
                         (e += t + (t.indexOf("?") < 0 ? "?" : "")),
                         (e += n ? "&list=".concat(n) : ""),
-                        (e += this.get("autoplay") ? "&autoplay=1" : ""),
                         (e += this.get("controls")
                           ? ""
                           : "&controls=0&showinfo=0"),
@@ -45258,7 +45243,6 @@
                       var t = this.get("viUrl");
                       return (
                         (t += this.get("videoId") + "?"),
-                        (t += this.get("autoplay") ? "&autoplay=1" : ""),
                         (t += this.get("loop") ? "&loop=1" : ""),
                         (t += this.get("controls")
                           ? ""
@@ -45350,9 +45334,8 @@
                     var e = this.model,
                       n = [
                         "loop",
-                        "autoplay",
-                        "controls",
-                        "muted",     
+                        "muted",
+                        "controls",   
                         "preload",   
                         "playsinline", 
                         "color",
@@ -45414,9 +45397,8 @@
                         break;
                       default:
                         (e.loop = n.get("loop")),
-                          (e.autoplay = n.get("autoplay")),
+                          (e.muted = n.get("muted")),
                           (e.controls = n.get("controls")),
-                          (e.muted = n.get("muted"));
                           (e.preload = n.get("preload"));
                           (e.poster = n.get("poster"));
                           if (n.get("playsinline")) {
@@ -45455,11 +45437,10 @@
                       
                       // Set all HTML5 video attributes with defaults
                       var model = this.model;
-                      t.muted = model.get("muted") || true;           // Default to muted
-                      t.autoplay = model.get("autoplay") || true;     // Default to autoplay
-                      t.controls = model.get("controls") || false;    // Default to no controls
+                      t.muted = model.get("muted") || false;     
+                      t.controls = model.get("controls") || false;   
                       t.loop = model.get("loop") || false;
-                      t.preload = model.get("preload") || "auto";     // Default to auto preload
+                      t.preload = model.get("preload") || "auto";   
                       
                       // Set playsinline attribute
                       if (model.get("playsinline") !== false) {
