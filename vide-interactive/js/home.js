@@ -45401,6 +45401,14 @@
                           (e.controls = n.get("controls")),
                           (e.preload = n.get("preload"));
                           (e.poster = n.get("poster"));
+                          
+                          // Set muted attribute explicitly
+                          if (n.get("muted")) {
+                            e.setAttribute("muted", "");
+                          } else {
+                            e.removeAttribute("muted");
+                          }
+                          
                           if (n.get("playsinline")) {
                             e.setAttribute("playsinline", "");
                           } else {
@@ -45436,12 +45444,18 @@
                       t.src = this.model.get("src");
                       
                       // Set all HTML5 video attributes with defaults
+                     // Set all HTML5 video attributes with defaults
                       var model = this.model;
                       t.muted = model.get("muted") || false;     
                       t.controls = model.get("controls") || false;   
                       t.loop = model.get("loop") || false;
                       t.preload = model.get("preload") || "auto";   
-                      
+
+                      // Set muted attribute explicitly for iframe capture
+                      if (model.get("muted")) {
+                        t.setAttribute("muted", "");
+                      }
+
                       // Set playsinline attribute
                       if (model.get("playsinline") !== false) {
                         t.setAttribute("playsinline", "");
