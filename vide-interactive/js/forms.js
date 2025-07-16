@@ -85,7 +85,7 @@
           }
           
           var xhr = new XMLHttpRequest();
-          xhr.open('GET', 'http://localhost:8080/api/excel/headers?uploadId=' + uploadId, true);
+          xhr.open('GET', 'http://103.75.226.215:8080/api/excel/headers?uploadId=' + uploadId, true);
           
           xhr.onload = function() {
             if (xhr.status >= 200 && xhr.status < 300) {
@@ -115,7 +115,7 @@
           console.log('Loading unique values for column:', columnName);
           
           var xhr = new XMLHttpRequest();
-          xhr.open('GET', 'http://localhost:8080/api/excel/unique-values?uploadId=' + uploadId + '&columnName=' + encodeURIComponent(columnName), true);
+          xhr.open('GET', 'http://103.75.226.215:8080/api/excel/unique-values?uploadId=' + uploadId + '&columnName=' + encodeURIComponent(columnName), true);
           
           xhr.onload = function() {
             if (xhr.status >= 200 && xhr.status < 300) {
@@ -428,11 +428,11 @@
                     return;
                   }
                   
-                  var apiAction = 'http://localhost:8080/api/excel/query-full-row-form/' + Id; 
+                  var apiAction = 'http://103.75.226.215:8080/api/excel/query-full-row-form/' + Id; 
                   this.addAttributes({ action: apiAction });
                 } else if (actionType === 'none') {
                   var currentAction = this.get('attributes').action || '';
-                  if (currentAction.includes('localhost:8080/api/excel')) {
+                  if (currentAction.includes('103.75.226.215:8080/api/excel')) {
                     this.addAttributes({ action: '' });
                   }
                 }

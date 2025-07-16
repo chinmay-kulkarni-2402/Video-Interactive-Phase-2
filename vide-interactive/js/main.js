@@ -22,6 +22,7 @@ const editor = InteractiveDesigner.init({
     customNewFontUrl,
     customLoadingPage, 
     customVideoIn,
+    loadBackButtonComponent,
     "basic-block-component", 
     "countdown-component",
     "forms-component",

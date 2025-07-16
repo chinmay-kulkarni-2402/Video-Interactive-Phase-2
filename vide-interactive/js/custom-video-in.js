@@ -901,7 +901,7 @@ async function generateInteractiveSlideshowHTML(hideThumbnails = false)  {
 <html lang="en"> 
 <head> 
   <meta charset="UTF-8" /> 
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/> 
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <title>Interactive Slideshow</title> 
   ${headContent} 
   <!-- External Styles --> 
@@ -1111,6 +1111,109 @@ async function generateInteractiveSlideshowHTML(hideThumbnails = false)  {
   .slide video::-webkit-media-controls-picture-in-picture-button {
     display: none !important;
   }
+  
+  /* Mobile Responsive Styles */
+@media screen and (max-width: 768px) {
+  .slide {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    transform: none !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+  
+  .slide * {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  
+  .slide img {
+    max-width: 100% !important;
+    height: auto !important;
+    object-fit: contain !important;
+  }
+  
+  .slide video {
+    max-width: 100% !important;
+    height: auto !important;
+    object-fit: contain !important;
+  }
+  
+  /* Adjust text content */
+  .slide div {
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+    padding: 5px !important;
+  }
+  
+  /* Controls positioning for mobile */
+  .controls {
+    bottom: 80px !important;
+    gap: 10px !important;
+  }
+  
+  .controls button {
+    width: 45px !important;
+    height: 45px !important;
+    font-size: 18px !important;
+  }
+  
+  #thumbnailContainer {
+    height: 70px !important;
+    bottom: 15px !important;
+  }
+  
+  .thumbnail {
+    min-width: 100px !important;
+    height: 50px !important;
+  }
+  
+  .thumbnail-label {
+    font-size: 12px !important;
+  }
+  
+  #timeLabel {
+    font-size: 12px !important;
+    bottom: 85px !important;
+    right: 10px !important;
+  }
+}
+
+/* Extra small screens */
+@media screen and (max-width: 480px) {
+  .slide {
+    padding: 10px !important;
+  }
+  
+  .slide div {
+    font-size: 12px !important;
+    padding: 3px !important;
+  }
+  
+  .controls {
+    bottom: 70px !important;
+  }
+  
+  .controls button {
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 16px !important;
+  }
+  
+  #thumbnailContainer {
+    height: 60px !important;
+  }
+  
+  .thumbnail {
+    min-width: 80px !important;
+    height: 40px !important;
+  }
+}
   
   .controls { 
     position: absolute; 
@@ -1460,16 +1563,8 @@ let videoLoadTimeout = null;
   }
   
   function setupVideoSync() {
-  currentVideo = getCurrentSlideVideo();
-  
-  if (currentVideo && slideData[current].hasVideo) {
-    videoSyncMode = true;
-    videoLoading = true; // Set loading state
-    
-    // Show loading indicator
-    showLoadingIndicator();
-    
-    // Remove existing event listeners to avoid duplicates
+  // Clear any existing video references and listeners
+  if (currentVideo) {
     currentVideo.removeEventListener('loadedmetadata', onVideoLoaded);
     currentVideo.removeEventListener('timeupdate', onVideoTimeUpdate);
     currentVideo.removeEventListener('ended', onVideoEnded);
@@ -1478,6 +1573,21 @@ let videoLoadTimeout = null;
     currentVideo.removeEventListener('waiting', onVideoWaiting);
     currentVideo.removeEventListener('error', onVideoError);
     currentVideo.removeEventListener('play', onVideoPlay);
+    currentVideo.pause();
+    currentVideo.currentTime = 0;
+  }
+  
+  currentVideo = getCurrentSlideVideo();
+  
+  if (currentVideo && slideData[current].hasVideo) {
+    videoSyncMode = true;
+    videoLoading = false; // Reset loading state
+    
+    // Clear any existing timeout
+    if (videoLoadTimeout) {
+      clearTimeout(videoLoadTimeout);
+      videoLoadTimeout = null;
+    }
     
     // Add event listeners
     currentVideo.addEventListener('loadedmetadata', onVideoLoaded);
@@ -1491,30 +1601,15 @@ let videoLoadTimeout = null;
     
     // Set video attributes to hide controls
     currentVideo.setAttribute('controls', false);
-    currentVideo.setAttribute('controlsList', 'nodownload nofullscreen noremoteplayback');
+    currentVideo.setAttribute('controlsList', 'nodownload nofullscreen noremoteplaybook');
     currentVideo.setAttribute('disablePictureInPicture', true);
     
-    // Preload video and reset to beginning
-    currentVideo.preload = 'auto';
+    // Reset video to beginning
     currentVideo.currentTime = 0;
     
-    // Set a timeout for video loading
-    videoLoadTimeout = setTimeout(() => {
-      if (videoLoading) {
-        console.error('Video loading timeout');
-        hideLoadingIndicator();
-        videoLoading = false;
-        // Optionally pause the slideshow
-        if (playing) {
-          togglePlay();
-          alert('Video loading failed. Slideshow paused.');
-        }
-      }
-    }, 30000); // 30 second timeout
-    
-    // Ensure video is ready by calling load if needed
-    if (currentVideo.readyState < 2) {
-      currentVideo.load();
+    // If we're in display phase and playing, start video immediately
+    if (playing && phase === 'display') {
+      currentVideo.play().catch(e => console.log('Video play failed:', e));
     }
   } else {
     videoSyncMode = false;
@@ -1833,6 +1928,8 @@ function showSlide(index) {
    video.setAttribute('disablePictureInPicture', true);
    video.addEventListener('contextmenu', preventContextMenu);
  });
+
+ setupBackButtonNavigation(index);
 } 
  
  function renderTransition(progress) { 
@@ -1856,6 +1953,41 @@ function showSlide(index) {
    } 
  } 
  
+ function setupBackButtonNavigation(slideIndex) {
+  const slideElement = slides[slideIndex];
+  const backButtons = slideElement.querySelectorAll('button[navigate-to-slide]');
+  
+  backButtons.forEach(button => {
+    // Remove any existing listeners to prevent duplicates
+    button.removeEventListener('click', handleBackButtonClick);
+    
+    // Add new listener
+    button.addEventListener('click', handleBackButtonClick);
+  });
+}
+
+function handleBackButtonClick(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  
+  const targetSlide = event.target.getAttribute('navigate-to-slide');
+  console.log('Back button clicked, target slide:', targetSlide);
+  
+  if (targetSlide) {
+    // Convert to 0-based index (slide numbers are 1-based for users)
+    const slideIndex = parseInt(targetSlide) - 1;
+    console.log('Calculated slide index:', slideIndex);
+    
+    if (slideIndex >= 0 && slideIndex < slideData.length) {
+      jumpToSlide(slideIndex);
+    } else {
+      console.log('Invalid slide index:', slideIndex);
+    }
+  } else {
+    console.log('No target slide specified');
+  }
+}
+
  function run(timestamp) { 
  if (!last) last = timestamp; 
  const delta = (timestamp - last) / 1000; 
@@ -1947,203 +2079,217 @@ function showSlide(index) {
 }
 
  
- function togglePlay() { 
-   playing = !playing; 
-   const btn = document.getElementById("playBtn"); 
-   
-   if (playing) { 
-     btn.innerHTML = '<i class="fas fa-pause"></i>'; 
-     last = null; 
-     rafId = requestAnimationFrame(run); 
-     
-     // Start background audio on first play
-     if (!backgroundAudioStarted) {
-       startBackgroundAudio();
-     } else {
-       resumeBackgroundAudio();
-     }
-     
-     // Resume video if in display phase
-     if (phase === 'display' && currentVideo && videoSyncMode) {
-       currentVideo.play().catch(e => console.log('Video play failed:', e));
-     }
-   } else { 
-     btn.innerHTML = '<i class="fas fa-play"></i>'; 
-     if (rafId) cancelAnimationFrame(rafId); 
-     
-     // Pause background audio
-         if (!waitingForInput) {
+ function togglePlay() {
+  // Don't allow play if waiting for input validation
+  if (waitingForInput && !playing) {
+    return;
+  }
+  
+  playing = !playing;
+  const btn = document.getElementById("playBtn");
+  
+  if (playing) {
+    btn.innerHTML = '<i class="fas fa-pause"></i>';
+    last = null;
+    rafId = requestAnimationFrame(run);
+    
+    // Start background audio on first play
+    if (!backgroundAudioStarted) {
+      startBackgroundAudio();
+    } else {
+      resumeBackgroundAudio();
+    }
+    
+    // Resume video if in display phase
+    if (phase === 'display' && currentVideo && videoSyncMode) {
+      currentVideo.play().catch(e => console.log('Video play failed:', e));
+    }
+  } else {
+    btn.innerHTML = '<i class="fas fa-play"></i>';
+    if (rafId) cancelAnimationFrame(rafId);
+    
+    // Pause background audio only if not waiting for input
+    if (!waitingForInput) {
       pauseBackgroundAudio();
     }
-     
-     // Pause video
-     if (currentVideo) {
-       currentVideo.pause();
-     }
-   } 
- } 
- 
-function seek(event) { 
- const rect = event.currentTarget.getBoundingClientRect(); 
- const percent = (event.clientX - rect.left) / rect.width; 
- const targetTime = percent * totalTime; 
- 
- // Find which slide this time corresponds to
- let acc = 0; 
- for (let i = 0; i < slideData.length; i++) { 
-   const slideEnd = acc + slideData[i].transition + slideData[i].display; 
-   if (targetTime <= slideEnd) { 
-     // Pause current video before switching
-     if (currentVideo) {
-       currentVideo.pause();
-     }
-     
-     // Clear any input validation state when manually seeking
-     waitingForInput = false;
-     if (inputValidationListener) {
-       const oldSlideElement = slides[current];
-       const oldSubmitButton = oldSlideElement.querySelector('button[type="submit"], input[type="submit"]');
-       if (oldSubmitButton) {
-         oldSubmitButton.removeEventListener('click', inputValidationListener);
-       }
-       inputValidationListener = null;
-     }
-     
-     current = i; 
-     const slideStart = acc; 
-     const slideTime = targetTime - slideStart; 
-     
-     if (slideTime < slideData[i].transition) { 
-       phase = 'transition'; 
-       remaining = slideData[i].transition - slideTime; 
-       
-       // Show slide and render transition at correct progress
-       showSlide(current);
-       const progress = slideTime / slideData[i].transition;
-       renderTransition(progress);
-     } else { 
-       phase = 'display'; 
-       remaining = slideData[i].display - (slideTime - slideData[i].transition); 
-       
-       // Show slide with full opacity
-       showSlide(current);
-       slides[current].style.opacity = 1;
-       slides[current].style.transform = 'translate(-50%, -50%)';
-       
-       // Setup video and resume playback if there's a video
-       if (videoSyncMode && currentVideo) {
-         const videoTime = slideTime - slideData[current].transition;
-         if (videoTime >= 0 && videoTime <= currentVideo.duration) {
-           currentVideo.currentTime = videoTime;
-           
-           // Resume playback and update UI
-           if (!playing) {
-             playing = true;
-             document.getElementById("playBtn").innerHTML = '<i class="fas fa-pause"></i>';
-             
-             // Start background audio if not started
-             if (!backgroundAudioStarted) {
-               startBackgroundAudio();
-             } else {
-               resumeBackgroundAudio();
-             }
-             
-             last = null;
-             rafId = requestAnimationFrame(run);
-           }
-           
-           currentVideo.play().catch(e => console.log('Video play failed:', e));
-         }
-       }
-     } 
-     
-     elapsed = targetTime; 
-     updateProgressUI(); 
-     break; 
-   } 
-   acc = slideEnd; 
- } 
+    
+    // Pause video
+    if (currentVideo) {
+      currentVideo.pause();
+    }
+  }
 }
  
+function seek(event) {
+  const rect = event.currentTarget.getBoundingClientRect();
+  const percent = (event.clientX - rect.left) / rect.width;
+  const targetTime = percent * totalTime;
+  
+  // Find which slide this time corresponds to
+  let acc = 0;
+  for (let i = 0; i < slideData.length; i++) {
+    const slideEnd = acc + slideData[i].transition + slideData[i].display;
+    if (targetTime <= slideEnd) {
+      // Clear existing video state properly
+      if (currentVideo) {
+        currentVideo.pause();
+        currentVideo.currentTime = 0;
+        // Remove all event listeners
+        currentVideo.removeEventListener('loadedmetadata', onVideoLoaded);
+        currentVideo.removeEventListener('timeupdate', onVideoTimeUpdate);
+        currentVideo.removeEventListener('ended', onVideoEnded);
+        currentVideo.removeEventListener('contextmenu', preventContextMenu);
+        currentVideo.removeEventListener('canplay', onVideoCanPlay);
+        currentVideo.removeEventListener('waiting', onVideoWaiting);
+        currentVideo.removeEventListener('error', onVideoError);
+        currentVideo.removeEventListener('play', onVideoPlay);
+      }
+      
+      // Clear any input validation state when manually seeking
+      const wasWaitingForInput = waitingForInput;
+      waitingForInput = false;
+      if (inputValidationListener) {
+        const oldSlideElement = slides[current];
+        const oldSubmitButton = oldSlideElement.querySelector('button[type="submit"], input[type="submit"]');
+        if (oldSubmitButton) {
+          oldSubmitButton.removeEventListener('click', inputValidationListener);
+        }
+        inputValidationListener = null;
+      }
+      
+      current = i;
+      const slideStart = acc;
+      const slideTime = targetTime - slideStart;
+      
+      if (slideTime < slideData[i].transition) {
+        phase = 'transition';
+        remaining = slideData[i].transition - slideTime;
+        
+        // Show slide and render transition at correct progress
+        showSlide(current);
+        const progress = slideTime / slideData[i].transition;
+        renderTransition(progress);
+      } else {
+        phase = 'display';
+        remaining = slideData[i].display - (slideTime - slideData[i].transition);
+        
+        // Show slide with full opacity
+        showSlide(current);
+        slides[current].style.opacity = 1;
+        slides[current].style.transform = 'translate(-50%, -50%)';
+        
+        // Setup video and resume playback if there's a video and we're playing
+        if (videoSyncMode && currentVideo && playing) {
+          const videoTime = slideTime - slideData[current].transition;
+          if (videoTime >= 0 && videoTime <= currentVideo.duration) {
+            currentVideo.currentTime = videoTime;
+            currentVideo.play().catch(e => console.log('Video play failed:', e));
+          }
+        }
+        
+        // Check for input validation requirement
+        setupInputValidation();
+      }
+      
+      // If we were waiting for input and seeked to a new slide, resume if playing
+      if (wasWaitingForInput && playing) {
+        resumeBackgroundAudio();
+      }
+      
+      elapsed = targetTime;
+      updateProgressUI();
+      
+      // Resume animation if playing and not running
+      if (playing && !rafId) {
+        last = null;
+        rafId = requestAnimationFrame(run);
+      }
+      
+      break;
+    }
+    acc = slideEnd;
+  }
+} 
 function jumpToSlide(index) {
- if (index < 0 || index >= slideData.length) return;
- 
- // Pause and reset current video before switching
- if (currentVideo) {
-   currentVideo.pause();
-   currentVideo.currentTime = 0;
- }
- 
- // Clear any input validation state when jumping to a new slide
- waitingForInput = false;
- if (inputValidationListener) {
-   const oldSlideElement = slides[current];
-   const oldSubmitButton = oldSlideElement.querySelector('button[type="submit"], input[type="submit"]');
-   if (oldSubmitButton) {
-     oldSubmitButton.removeEventListener('click', inputValidationListener);
-   }
-   inputValidationListener = null;
- }
- 
- // Calculate the time at the start of the target slide
- let targetTime = 0;
- for (let i = 0; i < index; i++) {
-   targetTime += slideData[i].transition + slideData[i].display;
- }
- 
- current = index;
- phase = 'transition';
- remaining = slideData[index].transition;
- elapsed = targetTime;
- 
- // Show the slide and start transition
- showSlide(current);
- 
- // If transition duration is 0, go directly to display phase
- if (slideData[index].transition === 0) {
-   phase = 'display';
-   remaining = slideData[index].display;
-   slides[current].style.opacity = 1;
-   slides[current].style.transform = 'translate(-50%, -50%)';
-   
-   // If there's a video on this slide, resume playback
-   if (videoSyncMode && currentVideo) {
-     currentVideo.currentTime = 0;
-     
-     // Resume playback and update UI
-     if (!playing) {
-       playing = true;
-       document.getElementById("playBtn").innerHTML = '<i class="fas fa-pause"></i>';
-       
-       // Start background audio if not started
-       if (!backgroundAudioStarted) {
-         startBackgroundAudio();
-       } else {
-         resumeBackgroundAudio();
-       }
-     }
-     
-     requestAnimationFrame(() => {
-       currentVideo.play().catch(e => console.log('Video play failed:', e));
-     });
-   }
-   
-   // Check for input validation requirement on the new slide
-   setupInputValidation();
- } else {
-   // Start transition from beginning - video will start after transition ends
-   renderTransition(0);
- }
- 
- updateProgressUI();
- 
- // Resume animation if not already running
- if (!rafId) {
-   last = null;
-   rafId = requestAnimationFrame(run);
- }
-}
- 
+  if (index < 0 || index >= slideData.length) return;
+  
+  // Clear any existing video state properly
+  if (currentVideo) {
+    currentVideo.pause();
+    currentVideo.currentTime = 0;
+    // Remove all event listeners to prevent conflicts
+    currentVideo.removeEventListener('loadedmetadata', onVideoLoaded);
+    currentVideo.removeEventListener('timeupdate', onVideoTimeUpdate);
+    currentVideo.removeEventListener('ended', onVideoEnded);
+    currentVideo.removeEventListener('contextmenu', preventContextMenu);
+    currentVideo.removeEventListener('canplay', onVideoCanPlay);
+    currentVideo.removeEventListener('waiting', onVideoWaiting);
+    currentVideo.removeEventListener('error', onVideoError);
+    currentVideo.removeEventListener('play', onVideoPlay);
+  }
+  
+  // Clear any input validation state when jumping to a new slide
+  const wasWaitingForInput = waitingForInput;
+  waitingForInput = false;
+  if (inputValidationListener) {
+    const oldSlideElement = slides[current];
+    const oldSubmitButton = oldSlideElement.querySelector('button[type="submit"], input[type="submit"]');
+    if (oldSubmitButton) {
+      oldSubmitButton.removeEventListener('click', inputValidationListener);
+    }
+    inputValidationListener = null;
+  }
+  
+  // Calculate the time at the start of the target slide
+  let targetTime = 0;
+  for (let i = 0; i < index; i++) {
+    targetTime += slideData[i].transition + slideData[i].display;
+  }
+  
+  current = index;
+  phase = 'transition';
+  remaining = slideData[index].transition;
+  elapsed = targetTime;
+  
+  // Show the slide and setup video properly
+  showSlide(current);
+  
+  // If transition duration is 0, go directly to display phase
+  if (slideData[index].transition === 0) {
+    phase = 'display';
+    remaining = slideData[index].display;
+    slides[current].style.opacity = 1;
+    slides[current].style.transform = 'translate(-50%, -50%)';
+    
+    // If there's a video on this slide and we're playing, start it
+    if (videoSyncMode && currentVideo && playing) {
+      currentVideo.currentTime = 0;
+      requestAnimationFrame(() => {
+        currentVideo.play().catch(e => console.log('Video play failed:', e));
+      });
+    }
+    
+    // Check for input validation requirement on the new slide
+    setupInputValidation();
+  } else {
+    // Start transition from beginning
+    renderTransition(0);
+  }
+  
+  // If we were waiting for input and jumped to a new slide, resume if playing
+  if (wasWaitingForInput && playing) {
+    // Resume background audio
+    resumeBackgroundAudio();
+  }
+  
+  updateProgressUI();
+  
+  // Resume animation if playing and not already running
+  if (playing && !rafId) {
+    last = null;
+    rafId = requestAnimationFrame(run);
+  }
+} 
  // Mouse movement detection for UI visibility
  let mouseTimeout;
  let isMouseMoving = false;
@@ -2225,7 +2371,7 @@ function jumpToSlide(index) {
    hideUI();
  });
  
- 
+window.jumpToSlide = jumpToSlide; 
  
 // Initialize slideshow
 function init() {
@@ -2253,6 +2399,8 @@ function init() {
  // Don't start the animation loop automatically
  // User must press play to start
  
+  setupBackButtonNavigation(0);
+
  // Initial UI state
  showUI();
 }
