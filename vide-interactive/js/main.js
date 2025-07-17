@@ -448,7 +448,7 @@ function uploadExcelCsv() {
     const formData = new FormData();
     formData.append('file', file);
 
-    fetch('http://localhost:8080/api/excel/upload', {
+    fetch('http://103.75.226.215:8080/api/excel/upload', {
       method: 'POST',
       body: formData,
     })
