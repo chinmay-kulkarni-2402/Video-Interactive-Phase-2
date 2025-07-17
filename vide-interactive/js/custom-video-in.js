@@ -901,7 +901,7 @@ async function generateInteractiveSlideshowHTML(hideThumbnails = false)  {
 <html lang="en"> 
 <head> 
   <meta charset="UTF-8" /> 
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/> 
   <title>Interactive Slideshow</title> 
   ${headContent} 
   <!-- External Styles --> 
@@ -1111,109 +1111,6 @@ async function generateInteractiveSlideshowHTML(hideThumbnails = false)  {
   .slide video::-webkit-media-controls-picture-in-picture-button {
     display: none !important;
   }
-  
-  /* Mobile Responsive Styles */
-@media screen and (max-width: 768px) {
-  .slide {
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    max-width: 100vw !important;
-    max-height: 100vh !important;
-    transform: none !important;
-    overflow: hidden !important;
-    box-sizing: border-box !important;
-  }
-  
-  .slide * {
-    max-width: 100% !important;
-    box-sizing: border-box !important;
-  }
-  
-  .slide img {
-    max-width: 100% !important;
-    height: auto !important;
-    object-fit: contain !important;
-  }
-  
-  .slide video {
-    max-width: 100% !important;
-    height: auto !important;
-    object-fit: contain !important;
-  }
-  
-  /* Adjust text content */
-  .slide div {
-    font-size: 14px !important;
-    line-height: 1.4 !important;
-    padding: 5px !important;
-  }
-  
-  /* Controls positioning for mobile */
-  .controls {
-    bottom: 80px !important;
-    gap: 10px !important;
-  }
-  
-  .controls button {
-    width: 45px !important;
-    height: 45px !important;
-    font-size: 18px !important;
-  }
-  
-  #thumbnailContainer {
-    height: 70px !important;
-    bottom: 15px !important;
-  }
-  
-  .thumbnail {
-    min-width: 100px !important;
-    height: 50px !important;
-  }
-  
-  .thumbnail-label {
-    font-size: 12px !important;
-  }
-  
-  #timeLabel {
-    font-size: 12px !important;
-    bottom: 85px !important;
-    right: 10px !important;
-  }
-}
-
-/* Extra small screens */
-@media screen and (max-width: 480px) {
-  .slide {
-    padding: 10px !important;
-  }
-  
-  .slide div {
-    font-size: 12px !important;
-    padding: 3px !important;
-  }
-  
-  .controls {
-    bottom: 70px !important;
-  }
-  
-  .controls button {
-    width: 40px !important;
-    height: 40px !important;
-    font-size: 16px !important;
-  }
-  
-  #thumbnailContainer {
-    height: 60px !important;
-  }
-  
-  .thumbnail {
-    min-width: 80px !important;
-    height: 40px !important;
-  }
-}
   
   .controls { 
     position: absolute; 
@@ -2400,7 +2297,7 @@ function init() {
  // User must press play to start
  
   setupBackButtonNavigation(0);
-
+  
  // Initial UI state
  showUI();
 }
